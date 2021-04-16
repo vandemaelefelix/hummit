@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="78" height="77.999" viewBox="0 0 78 77.999">
+  <defs>
+    <filter id="Exclusion_1" x="0" y="0" width="78" height="77.999" filterUnits="userSpaceOnUse">
+      <feOffset input="SourceAlpha"/>
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-opacity="0.388"/>
+      <feComposite operator="in" in2="blur"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <g id="Add_Button" data-name="Add Button" transform="translate(-174.592 -806.592)">
+    <g transform="matrix(1, 0, 0, 1, 174.59, 806.59)" filter="url(#Exclusion_1)">
+      <path id="Exclusion_1-2" data-name="Exclusion 1" d="M30,60A30.008,30.008,0,0,1,18.323,2.358,30.007,30.007,0,0,1,41.677,57.642,29.813,29.813,0,0,1,30,60Zm0-45A15,15,0,1,0,45,30,15.017,15.017,0,0,0,30,15Z" transform="translate(9 9)" fill="#fff"/>
+    </g>
+  </g>
+</svg>

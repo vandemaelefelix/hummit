@@ -12,9 +12,9 @@ const Home = ({ navigation } : any) => {
     const checkIfLoggedIn = () => {
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                console.log(user);
+                // console.log(user);
             } else {
-                navigation.navigate('Login')
+                navigation.navigate('Login', { error: 'not logged in' })
             }
         })
     }    
