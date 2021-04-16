@@ -18,67 +18,113 @@ import { firebaseConfig } from '../config';
 const { height, width } = Dimensions.get("window");
 
 const Login = ({ navigation } : any) => {
-    const popUpHeight = height / 10 * 4 + 30;
+    // ----- State popup forms -----
+    const signInFormHeight = height / 10 * 4 + 30;
+    const signUpFormHeight = height / 10 * 6 + 30;
 
-    const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-    const [registerPositionY, setRegisterPositionY] = useState(new Animated.Value(isRegisterOpen ? 0 : popUpHeight));
+    const [isSignInOpen, setIsSignInOpen] = useState<boolean>(false);
+    const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+
+    const [signInFormAnimation, setSignInFormAnimation] = useState({
+        positionY: new Animated.Value(isSignInOpen ? 0 : signInFormHeight)
+    });
+
+    const [signUpFormAnimation, setSignUpFormAnimation] = useState({
+        positionY: new Animated.Value(isSignUpOpen ? 0 : signUpFormHeight)
+    });
+
+    const animatedTransformSignIn = {
+        transform: [{translateY: signInFormAnimation.positionY}],
+    }    
+    const animatedTransformSignUp = {
+        transform: [{translateY: signUpFormAnimation.positionY}],
+    }    
+
+    // ----- State error message -----
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    // const [errorMessagePosition, setErrorMessagePosition] = useState(new Animated.Value(-50));
-    // const [errorMessageOpacity, setErrorMessageOpacity] = useState(new Animated.Value(0));
 
-    const [errorMessageAnimation, seterrorMessageAnimation] = useState({
+    const [errorMessageAnimation, setErrorMessageAnimation] = useState({
         position: new Animated.Value(-50),
         opacity: new Animated.Value(0),
-    })
-    const [timeoutId, setTimeoutId]: any = useState()
-    const [signUpError, setSignUpError] = useState<string | null>(null)
-
-    const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-
-    const animatedTransformSignUp = {
-        transform: [{translateY: registerPositionY}],
-    }
+    });
+    const [timeoutId, setTimeoutId]: any = useState();
 
     const animatedTransformErrorMessage = {
         transform: [{translateY: errorMessageAnimation.position}],
         opacity: errorMessageAnimation.opacity,
     }
 
+    // Formfields - Sign In
+    const [signInFormEmail, setSignInFormEmail] = useState<string>('');
+    const [signInFormPassword, setSignInFormPassword] = useState<string>('');
+
+    // Formfields - Sign Up
+    const [signUpFormFirstName, setSignUpFormFirstName] = useState<string>('');
+    const [signUpFormName, setSignUpFormName] = useState<string>('');
+    const [signUpFormEmail, setSignUpFormEmail] = useState<string>('');
+    const [signUpFormPassword, setSignUpFormPassword] = useState<string>('');
+
+
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
             (e) => {
-                console.log('Keyboard is opened', e.endCoordinates);
+                setIsSignInOpen(state => {
+                    if (state) {
+                        Animated.timing(signInFormAnimation.positionY, {
+                            toValue: - e.endCoordinates.height,
+                            duration: 150,
+                            useNativeDriver: true,
+                            easing: Easing.linear,
+                        }).start();
+                    }
 
-                console.log('KeyboardHeight: ', e.endCoordinates.height);
+                    return state;
+                });
 
-                Animated.timing(registerPositionY, {
-                    toValue: - e.endCoordinates.height,
-                    duration: 150,
-                    useNativeDriver: true,
-                    easing: Easing.linear,
-                }).start();
+                setIsSignUpOpen((state: boolean) => {
+                    if (state) {
+                        Animated.timing(signUpFormAnimation.positionY, {
+                            toValue: - e.endCoordinates.height,
+                            duration: 150,
+                            useNativeDriver: true,
+                            easing: Easing.linear,
+                        }).start();
+                    }
 
-                setKeyboardVisible(true);
+                    return state;
+                });
             }
         );
         const keyboardDidHideListener = Keyboard.addListener(
             'keyboardDidHide',
             (e) => {
-                console.log('Keyboard is closed', e.endCoordinates)
-                console.log('isRegisterOpen: ', isRegisterOpen);
 
-                if (isRegisterOpen) {
-                    Animated.timing(registerPositionY, {
-                        toValue: 0,
-                        duration: 150,
-                        useNativeDriver: true,
-                        easing: Easing.linear,
-                    }).start();
-                }
+                setIsSignInOpen(state => {
+                    if (state) {
+                        Animated.timing(signInFormAnimation.positionY, {
+                            toValue: 0,
+                            duration: 150,
+                            useNativeDriver: true,
+                            easing: Easing.linear,
+                        }).start();
+                    }
 
+                    return state;
+                });
 
-                setKeyboardVisible(false);
+                setIsSignUpOpen((state: boolean) => {
+                    if (state) {
+                        Animated.timing(signUpFormAnimation.positionY, {
+                            toValue: 0,
+                            duration: 150,
+                            useNativeDriver: true,
+                            easing: Easing.linear,
+                        }).start();
+                    }
+
+                    return state;
+                });
             }
         );
         
@@ -88,7 +134,7 @@ const Login = ({ navigation } : any) => {
         };
     }, []);
 
-    const showErrorMessage = (message: string) => {
+    const showErrorMessage = (message: string, time: number = 2000) => {
         console.log('show errormessage')
         setErrorMessage(message);
         clearTimeout(timeoutId);
@@ -115,23 +161,43 @@ const Login = ({ navigation } : any) => {
                 duration: 250,
                 useNativeDriver: true,
             }).start();
-        }, 2000);
+        }, time);
 
         setTimeoutId(timeout)
     }
 
-    const toggleSignUpForm = () => {
+    const toggleSignInForm = () => {
+        setIsSignInOpen((state: boolean) => {
+            console.info('Sign in form is: ', isSignInOpen);
+            Animated.timing(signInFormAnimation.positionY, {
+                toValue: state ? signInFormHeight : 0,
+                duration: 250,
+                useNativeDriver: true,
+                easing: Easing.inOut(Easing.quad),
+            }).start();
 
-        // setIsRegisterOpen(isRegisterOpen ? false : true);
-        
-        Animated.timing(registerPositionY, {
-            toValue: isRegisterOpen ? popUpHeight : 0,
-            duration: 250,
-            useNativeDriver: true,
-            easing: Easing.inOut(Easing.quad),
-        }).start();       
+            console.log('Sign in form: ', state ? false : true);
+            setIsSignInOpen(state ? false : true);
+            return state;
+        });
     }
-        
+    
+    const toggleSignUpForm = () => {
+        setIsSignUpOpen((state) => {
+            Animated.timing(signUpFormAnimation.positionY, {
+                toValue: state ? signUpFormHeight : 0,
+                duration: 250,
+                useNativeDriver: true,
+                easing: Easing.inOut(Easing.quad),
+            }).start();
+
+            console.log('Sign up form: ', state ? false : true);
+            setIsSignUpOpen(state ? false : true);
+            return state;
+        });
+    }
+    
+    // ----- Sign in stuff firebase -----
     const isUserEqual = (googleUser: any, firebaseUser: any) => {
         if (firebaseUser) {
             var providerData = firebaseUser.providerData;
@@ -166,7 +232,7 @@ const Login = ({ navigation } : any) => {
                                 .database()
                                 .ref('/users/' + result.user?.uid)
                                 .set({
-                                    gmail: result.user?.email,
+                                    email: result.user?.email,
                                     profile_picture: result.additionalUserInfo?.profile?.picture,
                                     locale: result.additionalUserInfo?.profile?.locale,
                                     first_name: result.additionalUserInfo?.profile?.given_name,
@@ -192,14 +258,10 @@ const Login = ({ navigation } : any) => {
                         navigation.navigate('Home');
                     })
                     .catch((error) => {
-                        // Handle Errors here.
                         var errorCode = error.code;
                         var errorMessage = error.message;
-                        // The email of the user's account used.
-                        var email = error.email;
-                        // The firebase.auth.AuthCredential type that was used.
-                        var credential = error.credential;
-                        // ...
+
+                        showErrorMessage('Something went wrong 😳');
                     });
             } else {
                 console.log('User already signed-in Firebase.');
@@ -228,49 +290,84 @@ const Login = ({ navigation } : any) => {
         }
     }
 
-    const signUpWithEmailAndPassword = async (email: string, password: string) => {
+    const signUpWithEmailAndPassword = async (firstName: string, name: string,email: string, password: string) => {
         console.log('Signing up with email and password');
         
-        firebase.auth().createUserWithEmailAndPassword('felix.vandemaele@skynet.com', 'test123')
+        firebase.auth().createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                // Signed in 
                 var user = userCredential.user;
-                console.log('User test: ', user);
+
+                console.log('Test User 😁: ', user?.uid)
+            
+                console.log(user?.displayName)
+
+                firebase
+                    .database()
+                    .ref('/users/' + user?.uid)
+                    .set({
+                        email: email,
+                        first_name: firstName,
+                        last_name: name,
+                        created_at: Date.now(),
+                    })
+                    .then((snapshot: any) => {
+                        console.info('User written to database')
+                        navigation.navigate('Home');
+                    })
+
             })
             .catch((error) => {
                 var errorCode = error.code;
                 var errorMessage = error.message;
 
                 if (errorCode == 'auth/email-already-in-use') {
-                    // console.log('User with this email already exists, 😉')
                     showErrorMessage('Email address has already been used!');
                 }
             });
     }
 
-    const signInWithEmailAndPassword = async () => {
-        console.log('Signing in with email and password.');
+    const signInWithEmailAndPasswordCustom = async (email: string, password: string) => {
 
-        var user = firebase.auth().currentUser;
-        if (user) {
-        // User is signed in.
-            if (user != null) {
-                const userData = {
-                    name: user.displayName,
-                    email: user.email,
-                    photoUrl: user.photoURL,
-                    emailVerified: user.emailVerified,
-                    uid: user.uid,  
-                }
-
-                console.log(userData);
-                // The user's ID, unique to the Firebase project. Do NOT use
-                // this value to authenticate with your backend server, if
-                // you have one. Use User.getToken() instead.
-            }
-        } else {
-        // No user is signed in.
+        if (email === '' || email.length <= 3) {
+            showErrorMessage('Please fill in your email address.');
+            return;
+        } else if (password === '' || password.length <= 4) {
+            showErrorMessage('Password needs to be at least 5 characters long!');
+            return;
         }
+
+        firebase.auth()
+            .signInWithEmailAndPassword(email, password)
+            .then((user) => {
+                console.log('succes: ', user);
+                navigation.navigate('Home');
+            })
+            .catch((error) => {
+                var errorCode = error.code;
+                var errorMessage = error.message;
+
+                console.info('Error Code: ', errorCode);
+                console.info('Error message: ', errorMessage);
+
+                switch (errorCode) {
+                    case 'auth/invalid-email':
+                        showErrorMessage('Invalid email address!');
+                        break;
+                    case 'auth/user-disabled':
+                        showErrorMessage('User has been disabled.');
+                        break;
+                    case 'auth/user-not-found':
+                        showErrorMessage('Wrong email or password!');
+                        break;
+                    case 'auth/wrong-password':
+                        showErrorMessage('Wrong email or password!');                    
+                        break;
+                
+                    default:
+                        showErrorMessage(errorMessage, 5000);
+                        break;
+                }
+            });
 
     }
 
@@ -281,6 +378,7 @@ const Login = ({ navigation } : any) => {
             <LinearGradient
                 colors={[theme[700], theme[800]]}
             >
+                {/* ---------- ERROR MESSAGE ---------- */}
                 <Animated.View
                     style={[login.errorMessage, animatedTransformErrorMessage]}
                 >
@@ -292,7 +390,9 @@ const Login = ({ navigation } : any) => {
                         }}
                     >{errorMessage}</Text>
                 </Animated.View>
+                
 
+                {/* ---------- LOGO ---------- */}
                 <View
                     style={[login.logoContainer]}
                 >
@@ -309,29 +409,31 @@ const Login = ({ navigation } : any) => {
                     <Text style={[login.logoText]} >HUMMIT</Text>
                 </View>
 
+
+                {/* ---------- BUTTONS: SIGN IN | SIGN UP | SIGN IN WITH GOOGLE ---------- */}
                 <View 
                     style={[login.buttonsContainer]}
                 >
                     <TouchableOpacity
-                        style={[login.signInButton]}
-                        onPress={() => {signInWithEmailAndPassword()}}
+                        style={[login.button]}
+                        onPress={() => {
+                            toggleSignInForm()
+                        }}
                     >
-                        <Text style={[login.signInButtonText]}>SIGN IN</Text>
+                        <Text style={[login.buttonText]}>SIGN IN</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[login.signInButton]}
+                        style={[login.button]}
                         onPress={() => {
-                            console.log('isRegisterOpen2: ', isRegisterOpen);
-                            setIsRegisterOpen(true);
                             toggleSignUpForm();
                         }}
                     >
-                        <Text style={[login.signInButtonText]}>SIGN UP</Text>
+                        <Text style={[login.buttonText]}>SIGN UP</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[login.signInWithGoogleButton]}
+                        style={{...login.button, ...login.signInWithGoogleButton}}
                         onPress={() => {
                             console.log('Sign In With Google');
                             signInWithGoogleAsync();
@@ -356,17 +458,100 @@ const Login = ({ navigation } : any) => {
 
             </LinearGradient>
 
+            
+            {/* ---------- SIGN UP FORM ---------- */}
             <Animated.View
-                style={[login.registerForm, animatedTransformSignUp]}
+                style={[login.form, login.signUpForm, animatedTransformSignUp]}
             >
                 <TouchableOpacity
                     onPress={() => {
                         Keyboard.dismiss();
-                        setIsRegisterOpen(false);
                         toggleSignUpForm();
-                        console.log('isRegisterOpen2: ', isRegisterOpen);
                     }}
-                    style={[login.closeRegisterButton]}
+                    style={[login.closeFormButton]}
+                >
+                    <Svg
+                        viewBox="0 0 21.213 21.213"
+                        style={{
+                            width: '30%',
+                            height: '30%',
+                        }}
+                    >
+                        <G
+                            data-name="Menu Icon Close"
+                            fill="none"
+                            stroke="#000"
+                            strokeLinecap="round"
+                            strokeWidth={3}
+                        >
+                            <Path data-name="Line 3" d="M19.092 2.122l-16.97 16.97" />
+                            <Path data-name="Line 5" d="M2.122 2.122l16.97 16.97" />
+                        </G>
+                    </Svg>
+                </TouchableOpacity>
+                
+                <TextInput
+                    placeholder="FIRSTNAME"
+                    style={[login.formField]}
+                    onChangeText={(value) => {
+                        setSignUpFormFirstName(value);
+                    }}
+                />
+                <TextInput
+                    placeholder="NAME"
+                    style={[login.formField]}
+                    onChangeText={(value) => {
+                        setSignUpFormName(value);
+                    }}
+                />
+                <TextInput
+                    placeholder="EMAIL"
+                    style={[login.formField]}
+                    onChangeText={(value) => {
+                        setSignUpFormEmail(value);
+                    }}
+                />
+
+                <TextInput
+                    secureTextEntry={true}
+                    placeholder="PASSWORD"
+                    style={[login.formField]}
+                    onChangeText={(value) => {
+                        setSignUpFormPassword(value);
+                    }}
+                />
+
+                <LinearGradient
+                    colors={[theme[700], theme[800]]}
+                    style={[login.formButton]}
+                >
+                    <TouchableOpacity
+                        style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            justifyContent: 'center', 
+                            alignItems: 'center',
+                        }}
+                        onPress={() => {
+                            signUpWithEmailAndPassword(signUpFormFirstName, signUpFormName, signUpFormEmail, signUpFormPassword);
+                        }}
+                    >
+                        <Text style={[login.formButtonText]}>SIGN UP</Text>
+                    </TouchableOpacity>
+                </LinearGradient>
+
+            </Animated.View>
+
+            {/* ---------- SIGN IN FORM ---------- */}
+            <Animated.View
+                style={[login.form, login.signInForm, animatedTransformSignIn]}
+            >
+                <TouchableOpacity
+                    onPress={() => {
+                        Keyboard.dismiss();
+                        toggleSignInForm();
+                    }}
+                    style={[login.closeFormButton]}
                 >
                     <Svg
                         viewBox="0 0 21.213 21.213"
@@ -390,82 +575,24 @@ const Login = ({ navigation } : any) => {
                 
                 <TextInput
                     placeholder="EMAIL"
-                    style={[login.registerFormField]}
-                />
-
-                <TextInput
-                    secureTextEntry={true}
-                    placeholder="PASSWORD"
-                    style={[login.registerFormField]}
-                />
-
-                <LinearGradient
-                    colors={[theme[700], theme[800]]}
-                    style={[login.signInButton]}
-                >
-                    <TouchableOpacity
-                        style={{ 
-                            width: '100%', 
-                            height: '100%', 
-                            justifyContent: 'center', 
-                            alignItems: 'center',
-                        }}
-                        onPress={() => {
-                            signUpWithEmailAndPassword('test', 'test');
-                        }}
-                    >
-                        <Text>SIGN UP</Text>
-                    </TouchableOpacity>
-                </LinearGradient>
-
-            </Animated.View>
-            {/* ------------------------------------- Sign In Pop-Up ---------------------------------------------- */}
-            <Animated.View
-                style={[login.registerForm, animatedTransformSignUp]}
-            >
-                <TouchableOpacity
-                    onPress={() => {
-                        Keyboard.dismiss();
-                        setIsRegisterOpen(false);
-                        toggleSignUpForm();
-                        console.log('isRegisterOpen2: ', isRegisterOpen);
+                    style={[login.formField]}
+                    onChangeText={(value) => {
+                        setSignInFormEmail(value);
                     }}
-                    style={[login.closeRegisterButton]}
-                >
-                    <Svg
-                        viewBox="0 0 21.213 21.213"
-                        style={{
-                            width: '30%',
-                            height: '30%',
-                        }}
-                    >
-                        <G
-                            data-name="Menu Icon Close"
-                            fill="none"
-                            stroke="#000"
-                            strokeLinecap="round"
-                            strokeWidth={3}
-                        >
-                            <Path data-name="Line 3" d="M19.092 2.122l-16.97 16.97" />
-                            <Path data-name="Line 5" d="M2.122 2.122l16.97 16.97" />
-                        </G>
-                    </Svg>
-                </TouchableOpacity>
-                
-                <TextInput
-                    placeholder="EMAIL"
-                    style={[login.registerFormField]}
                 />
 
                 <TextInput
                     secureTextEntry={true}
                     placeholder="PASSWORD"
-                    style={[login.registerFormField]}
+                    style={[login.formField]}
+                    onChangeText={(value) => {
+                        setSignInFormPassword(value);
+                    }}
                 />
 
                 <LinearGradient
                     colors={[theme[700], theme[800]]}
-                    style={[login.signInButton]}
+                    style={[login.formButton]}
                 >
                     <TouchableOpacity
                         style={{ 
@@ -475,14 +602,15 @@ const Login = ({ navigation } : any) => {
                             alignItems: 'center',
                         }}
                         onPress={() => {
-                            signUpWithEmailAndPassword('test', 'test');
+                            signInWithEmailAndPasswordCustom(signInFormEmail, signInFormPassword);
                         }}
                     >
-                        <Text>SIGN UP</Text>
+                        <Text style={[login.formButtonText]}>SIGN IN</Text>
                     </TouchableOpacity>
                 </LinearGradient>
 
             </Animated.View>
+        
         </SafeAreaView>
     )
 }

@@ -26,7 +26,7 @@ export const login = StyleSheet.create({
         fontSize: 32,
         color: theme[100],
     },
-    signInButton: {
+    button: {
         width: '70%',
         height: (height/3) / 5,
         borderColor: theme[100],
@@ -36,19 +36,29 @@ export const login = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 20,
     },
-    signInButtonText: {
+    buttonText: {
         fontWeight: 'bold',
         fontSize: 16,
         color: theme[100],
     },
+
+    // signInButton: {
+    //     width: '70%',
+    //     height: (height/3) / 5,
+    //     borderColor: theme[100],
+    //     borderWidth: 2,
+    //     borderRadius: 50,
+    //     justifyContent: 'center',
+    //     alignItems: 'center',
+    //     marginBottom: 20,
+    // },
+    // signInButtonText: {
+    //     fontWeight: 'bold',
+    //     fontSize: 16,
+    //     color: theme[100],
+    // },
     signInWithGoogleButton: {
-        width: '70%',
-        height: (height/3) / 5,
-        borderColor: theme[100],
-        borderWidth: 2,
-        borderRadius: 50,
         justifyContent: 'space-evenly',
-        alignItems: 'center',
         flexDirection: 'row',
     },
     signInWithGoogleButtonText: {
@@ -57,21 +67,28 @@ export const login = StyleSheet.create({
         color: theme[100],
         flexGrow: 0.1,
     },
-    registerForm: {
+
+    form: {
         position: 'absolute',
         width: '100%',
-        height: height / 10 * 4,
+        // height: height / 10 * 5,
         bottom: 0,
         backgroundColor: theme[100],
         justifyContent: 'center',
         alignItems: 'center',
-        // borderTopRadius: 30,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
     },
-    registerFormField: {
+    signInForm: {
+       height: height / 10 * 4, 
+    },
+    signUpForm: {
+       height: height / 10 * 6, 
+    },
+    formField: {
         width: '70%',
-        height: 60,
+        // height: 60,
+        height: (height/3) / 5,
         borderColor: theme[800],
         borderWidth: 2,
         borderRadius: 50,
@@ -80,7 +97,10 @@ export const login = StyleSheet.create({
         marginBottom: 20,
         textAlign: 'center',
     },
-    closeRegisterButton: {
+    formFieldText: {
+        color: 'black',
+    },
+    closeFormButton: {
         width: 60,
         height: 60,
         borderRadius: 50,
@@ -90,13 +110,31 @@ export const login = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 3,
-    }, 
+        zIndex: 1,
+    },
+    formButton: {
+        width: '70%',
+        height: (height/3) / 5,
+        borderColor: theme[100],
+        borderWidth: 2,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    formButtonText: {
+        color: theme[100],
+        fontWeight: 'bold',
+        fontSize: 18,
+    },
+
     errorMessage: {
         position: 'absolute',
         top: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        height: 50,
+        minHeight: 50,
+        padding: 8,
         width: '80%',
         alignSelf: 'center',
         backgroundColor: theme[100],
