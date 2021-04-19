@@ -1,9 +1,10 @@
-import { StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 import { theme } from '../colors/theme';
 
 export const soundWave = StyleSheet.create({
     soundWave: {
-        width: '80%',
+        minWidth: 150,
+        maxWidth: '80%',
         height: 50,
         borderRadius: 25,
         backgroundColor: theme[800],
@@ -16,7 +17,7 @@ export const soundWave = StyleSheet.create({
     },
     wave: {
         height: '100%',
-        width: '70%',
+        width: '60%',
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -27,7 +28,6 @@ export const soundWave = StyleSheet.create({
         backgroundColor: 'white',
     },
     soundwaveButtons: {
-        width: '30%',
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'center',

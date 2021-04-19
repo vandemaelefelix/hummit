@@ -12,7 +12,7 @@ import firebase from 'firebase';
 
 // Styles
 import { theme } from '../styles/colors/theme';
-import { login } from '../styles/components/Login';
+import { login } from '../styles/components/login';
 import { firebaseConfig } from '../config';
 
 const { height, width } = Dimensions.get("window");
@@ -273,7 +273,6 @@ const Login = ({ navigation } : any) => {
     const signInWithGoogleAsync = async () => {
         try {
             const result = await Google.logInAsync({
-                // behavior: 'web',
                 androidClientId: '685615078611-8eqil84kc8763ufdo68vs2ojkdsa86lv.apps.googleusercontent.com',
                 iosClientId: '685615078611-nb6s3ti064b210qb1c5jgf6ti36e3vp0.apps.googleusercontent.comz',
                 scopes: ['profile', 'email'],

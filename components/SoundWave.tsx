@@ -9,25 +9,12 @@ import Svg, { Path, G, Circle } from 'react-native-svg';
 import { theme } from '../styles/colors/theme';
 import { soundWave } from '../styles/components/soundWave';
 
+import firebase from 'firebase';
+import 'firebase/firestore';
+import 'firebase/database';
+import 'firebase/storage';
+
 const SoundWave = (props: any) => {
-    const { postId, memo, duration } = props;
-
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [playbackTime, setPlaybackTime] = useState(duration);
-    const [isPaused, setIsPaused] = useState(false);
-    const [shouldPause, setShouldPause] = useState(false);
-
-    
-
-
-    function getRndInteger(min: number, max: number) {
-        return Math.floor(Math.random() * (max - min + 1) ) + min;
-    }
-
-    function randRangeSeed(min: number, max: number, seed: number) {
-        var x = Math.sin(seed) * 10000;
-        return Math.floor((x - Math.floor(x)) * (max - min) + min);
-    }
 
     const convertMillisToMinSec = (millis: number | undefined) => {
         if (!!millis) {
@@ -40,6 +27,40 @@ const SoundWave = (props: any) => {
         }
     }
 
+    const { postId, memo, duration } = props;
+
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [playbackTime, setPlaybackTime] = useState<string>(convertMillisToMinSec(duration));
+    const [isPaused, setIsPaused] = useState(false);
+    const [shouldPause, setShouldPause] = useState(false);
+    const [sound, setSound] = useState<Audio.Sound | undefined>(undefined)
+
+    
+    // ! ====================================================================
+    
+    const playSong = async (url: string) => {
+        let soundObject = new Audio.Sound();
+        try {
+            await soundObject.loadAsync({ uri: url });
+            soundObject.playAsync();
+        } catch (e) {
+            console.log('ERROR Loading Audio', e);
+        }
+    }
+
+    // ! ====================================================================
+
+    function getRndInteger(min: number, max: number) {
+        return Math.floor(Math.random() * (max - min + 1) ) + min;
+    }
+
+    function randRangeSeed(min: number, max: number, seed: number) {
+        var x = Math.sin(seed) * 10000;
+        return Math.floor((x - Math.floor(x)) * (max - min) + min);
+    }
+
+    
+
     const createSoundWaves = (id: string) => {
         let jsxObject = [];
         let seed = postId+15;
@@ -51,31 +72,46 @@ const SoundWave = (props: any) => {
     }
 
     const playSound = async () => {
-        const {sound, status} = await Audio.Sound.createAsync(memo);
-  
+        const soundObject = await Audio.Sound.createAsync({uri: memo});
+        setSound(soundObject.sound);
+
         // @ts-ignore
-        const totalTime = status.durationMillis;
+        const totalTime = soundObject.status.durationMillis;
         
         sound?.setStatusAsync({ progressUpdateIntervalMillis: 100 })
         
         sound?.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
             if (status.isLoaded) {
                 const currentTime = status?.positionMillis;
-                setPlaybackTime(convertMillisToMinSec(totalTime - currentTime));
+                setPlaybackTime(convertMillisToMinSec((totalTime - currentTime )));
                 
                 if (status.didJustFinish) {
                     setIsPlaying(false);
+                    setPlaybackTime(convertMillisToMinSec(duration));
                 }
                 
-                if (!isPaused && shouldPause) {
-                    sound.pauseAsync()
-                }
+                // if (!isPaused && shouldPause) {
+                //     console.log('pausing...')
+                //     sound.pauseAsync()
+                // }
             }
         });
   
-        await sound.playAsync();
+        await sound?.playAsync();
         // await sound.unloadAsync();
     }
+
+    // const playSound = async () => {
+    //     const sound = await Audio.Sound.createAsync({uri: memo});
+    //     setSound(sound.sound);
+
+    //     // @ts-ignore
+    //     const totalTime = sound.status.durationMillis;
+        
+        
+  
+    //     await sound.sound.playAsync();
+    // }
 
     return (
         <LinearGradient colors={[theme[800], theme[700]]} style={[soundWave.soundWave]}>
@@ -85,7 +121,12 @@ const SoundWave = (props: any) => {
                 !isPlaying ? 
                 <TouchableOpacity 
                     style={[soundWave.button]}
-                    onPress={() => {setIsPlaying(true); playSound()}}
+                    onPress={() => {
+                        setIsPlaying(true);
+                        setShouldPause(false);
+                        setIsPaused(false);
+                        playSound()
+                    }}
                 >
                     <Svg width={24} height={24} viewBox="0 0 24 24">
                         <G data-name="Group 14" transform="translate(-8 -8)">
@@ -108,7 +149,10 @@ const SoundWave = (props: any) => {
                 :
                 <TouchableOpacity 
                     style={[soundWave.button]}
-                    onPress={() => {setIsPlaying(false); playSound()}}
+                    onPress={() => {
+                        setIsPlaying(false);
+                        sound?.stopAsync()
+                    }}
                 >
                     <Svg width={24} height={24} viewBox="0 0 24 24" {...props}>
                         <G transform="translate(-8 -8)">
