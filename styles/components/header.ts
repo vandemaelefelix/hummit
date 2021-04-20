@@ -3,7 +3,7 @@ import { theme } from '../colors/theme';
 
 export const header = StyleSheet.create({
     container: {
-        backgroundColor: theme[600],
+        backgroundColor: theme[100],
         // borderBottomColor: 'black',
         // borderBottomWidth: 1,
         flexDirection: 'row',
@@ -18,12 +18,13 @@ export const header = StyleSheet.create({
         fontWeight: 'bold',
     },
     menu: {
-        width: 24,
-        height: 24,
+        width: 30,
+        height: 30,
+        borderRadius: 50,
     },
     search: {
-        width: 24,
-        height: 24,
+        width: 30,
+        height: 30,
     },
     
 })

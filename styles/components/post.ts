@@ -1,9 +1,13 @@
 import { StyleSheet } from 'react-native';
 import { theme } from '../colors/theme';
 
+import { Dimensions } from 'react-native';
+
+const { height, width } = Dimensions.get("window");
+
 export const post = StyleSheet.create({
     container: {
-        backgroundColor: theme[600],
+        backgroundColor: theme[100],
         elevation: 3,
         borderRadius: 15,
         padding: 16,
@@ -11,8 +15,8 @@ export const post = StyleSheet.create({
         marginHorizontal: 16,
     },
     profilePic: {
-        width: 50,
-        height: 50,
+        width: 40,
+        height: 40,
         borderRadius: 100,
     },
     name: {
@@ -27,5 +31,23 @@ export const post = StyleSheet.create({
     description: {
         marginBottom: 16,
     },
-    commentButton: {},
+    commentButton: {
+        flexDirection: 'row',
+        width: '100%',
+        padding: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    commentButtonText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    commentButtonIcon: {
+        marginRight: 8,
+        marginLeft: -16,
+        width: 24,
+        height: 24,
+    },
+
+    
 })

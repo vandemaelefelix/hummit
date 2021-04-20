@@ -5,4 +5,5 @@ export const theme = {
     600: '#fcf8ff',
     700: '#d11fd0',
     800: '#6f00ff',
+    'checkmark': 'lightgreen',
 }

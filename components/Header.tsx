@@ -7,25 +7,51 @@ import Svg, { Path, G, Circle } from 'react-native-svg';
 import { theme } from '../styles/colors/theme';
 import { header } from '../styles/components/header';
 
+import firebase from 'firebase';
+import 'firebase/firestore';
+
 const Header = (props: any) => {
-    
+    const { showProfilePicture, userId } = props;
+    const [currentUser, setCurrentUser] = useState<firebase.firestore.DocumentData | undefined>()
+
+    useEffect(() => {
+        getProfileData(userId);
+    }, [])
+
+    const getProfileData = (userId: string) => {
+        firebase.firestore()
+        .collection('users')
+        .doc(userId).get()
+        .then((doc) => {
+            if (doc.exists) {
+                // console.log("Document data:", doc.data());
+                setCurrentUser(doc.data());
+            }
+        }).catch((error) => {
+            console.log("Error getting document:", error);
+        });
+    }
+
 
     return (
         <View style={header.container}>
             <TouchableOpacity style={[header.menu]}>
-                <Svg viewBox="0 0 24 19">
-                    <G data-name="Menu Icon" fill="none" stroke="#000" strokeWidth={3}>
-                        <Path data-name="Line 3" d="M0 1.5h24" />
-                        <Path data-name="Line 4" d="M0 9.5h12" />
-                        <Path data-name="Line 5" d="M0 17.5h18" />
-                    </G>
-                </Svg>
+                <Image
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: 50,
+                    }}
+                    source={currentUser ? {uri:currentUser?.profile_picture} : require('../assets/icon.png') }
+                >
+
+                </Image>
             </TouchableOpacity>
 
             <Text style={{...header.logo}}>HUMMIT</Text>
 
             <TouchableOpacity style={[header.search]}>
-                <Svg viewBox="0 0 25.067 25.054">
+                <Svg style={{width: '90%', height: '90%'}} viewBox="0 0 25.067 25.054">
                     <G data-name="Search Icon" fill="none" stroke="#000" strokeWidth={3}>
                         <G data-name="Ellipse 1">
                             <Circle cx={10.75} cy={10.75} r={10.75} stroke="none" />

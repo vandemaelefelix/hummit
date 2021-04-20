@@ -168,7 +168,6 @@ const Login = ({ navigation } : any) => {
 
     const toggleSignInForm = () => {
         setIsSignInOpen((state: boolean) => {
-            console.info('Sign in form is: ', isSignInOpen);
             Animated.timing(signInFormAnimation.positionY, {
                 toValue: state ? signInFormHeight : 0,
                 duration: 250,
@@ -176,7 +175,6 @@ const Login = ({ navigation } : any) => {
                 easing: Easing.inOut(Easing.quad),
             }).start();
 
-            console.log('Sign in form: ', state ? false : true);
             setIsSignInOpen(state ? false : true);
             return state;
         });
@@ -191,7 +189,6 @@ const Login = ({ navigation } : any) => {
                 easing: Easing.inOut(Easing.quad),
             }).start();
 
-            console.log('Sign up form: ', state ? false : true);
             setIsSignUpOpen(state ? false : true);
             return state;
         });
@@ -228,28 +225,32 @@ const Login = ({ navigation } : any) => {
                 await firebase.auth().signInWithCredential(credential)
                     .then((result: any) => {
                         if (result.additionalUserInfo.isNewUser) {
-                            firebase
-                                .database()
-                                .ref('/users/' + result.user?.uid)
+
+                            firebase.firestore().collection('users').doc(result.user?.uid)
                                 .set({
                                     email: result.user?.email,
                                     profile_picture: result.additionalUserInfo?.profile?.picture,
                                     locale: result.additionalUserInfo?.profile?.locale,
                                     first_name: result.additionalUserInfo?.profile?.given_name,
                                     last_name: result.additionalUserInfo?.profile?.family_name,
+                                    friends: [],
                                     created_at: Date.now(),
                                 })
                                 .then((snapshot: any) => {
-                                    console.info('User written to database')
-                                    // console.log(snapshot);
+                                    console.info('User written to database');
                                 })
                         } else {
-                            firebase
-                                .database()
-                                .ref('/users/' + result.user?.uid)
+                            firebase.firestore().collection('users').doc(result.user?.uid)
                                 .update({
                                     last_logged_in: Date.now(),
-                                })
+                                });
+
+                            // firebase
+                            //     .database()
+                            //     .ref('/users/' + result.user?.uid)
+                            //     .update({
+                            //         last_logged_in: Date.now(),
+                            //     })
                         }
 
                         console.log('writing to database')
@@ -296,18 +297,13 @@ const Login = ({ navigation } : any) => {
             .then((userCredential) => {
                 var user = userCredential.user;
 
-                console.log('Test User 😁: ', user?.uid)
-            
-                console.log(user?.displayName)
-
-                firebase
-                    .database()
-                    .ref('/users/' + user?.uid)
+                firebase.firestore().collection('users').doc(user?.uid)
                     .set({
                         email: email,
                         first_name: firstName,
                         last_name: name,
                         created_at: Date.now(),
+                        friends: [],
                     })
                     .then((snapshot: any) => {
                         console.info('User written to database')
@@ -338,15 +334,15 @@ const Login = ({ navigation } : any) => {
         firebase.auth()
             .signInWithEmailAndPassword(email, password)
             .then((user) => {
-                console.log('succes: ', user);
+                firebase.firestore().collection('users').doc(user?.user?.uid)
+                    .update({
+                        last_logged_in: Date.now(),
+                    });
                 navigation.navigate('Home');
             })
             .catch((error) => {
                 var errorCode = error.code;
                 var errorMessage = error.message;
-
-                console.info('Error Code: ', errorCode);
-                console.info('Error message: ', errorMessage);
 
                 switch (errorCode) {
                     case 'auth/invalid-email':

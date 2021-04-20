@@ -3,6 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+
+
 
 import * as FileSystem from 'expo-file-system';
 
@@ -25,8 +28,8 @@ import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 import SoundWave from '../../components/SoundWave';
 
-// const Tab = createBottomTabNavigator();
-const Tab = createMaterialBottomTabNavigator();
+const Tab = createMaterialTopTabNavigator();
+// const Tab = createMaterialBottomTabNavigator();
 
 const index = ({ navigation } : any) => {
     // ! Mag weg
@@ -89,26 +92,7 @@ const index = ({ navigation } : any) => {
             _recording.setOnRecordingStatusUpdate(async (rec) => {
                 console.log(isRecording)
                 console.log(rec.metering);
-                if (rec.durationMillis >= 5000) {
-                    // stopRecording();
-                    // setCanStop(false);
-                    
-                    // Animated.timing(loadingAnimation, {
-                        //     toValue: 0,
-                        //     duration: 30000,
-                        //     useNativeDriver: true,
-                        // }).stop()
-                        
-                    // await recording?.stopAndUnloadAsync();
-                    // Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    // setCanStop(false)
-                    // toggleForm();
-                    // Animated.timing(loadingAnimation, {
-                    //     toValue: 0,
-                    //     duration: 30000,
-                    //     useNativeDriver: true,
-                    // }).stop()
-                }
+                
             })
             await _recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
         
@@ -188,7 +172,11 @@ const index = ({ navigation } : any) => {
     return (
         <SafeAreaProvider>
             <Tab.Navigator
-                
+                tabBarPosition='bottom'
+                tabBarOptions={{
+                    tabStyle: {backgroundColor: theme[100], height: 60},
+                    keyboardHidesTabBar: true,
+                }}
             >
                 <Tab.Screen name="Home" component={Home} />
                 <Tab.Screen name="Profile" component={Profile} />
@@ -290,7 +278,6 @@ const index = ({ navigation } : any) => {
                             easing: Easing.inOut(Easing.quad),
                         }).start()
                         setDescriptionValue(undefined);
-                        // setPickerSelectedValue('everyone');
                         setPrivacyMode(0)
                     }}
                     style={[tabNavBar.closeFormButton]}
