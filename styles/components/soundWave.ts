@@ -23,7 +23,7 @@ export const soundWave = StyleSheet.create({
         alignItems: 'center',
     },
     waveLine: {
-        width: 3,
+        width: 2,
         borderRadius: 50,
         backgroundColor: 'white',
     },
