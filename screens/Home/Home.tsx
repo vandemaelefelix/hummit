@@ -1,20 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import * as FileSystem from 'expo-file-system';
-
-import { Button, FlatList, Text, TouchableOpacity, View, Image, RefreshControl, Animated, Dimensions, Easing, Keyboard, TextInput } from 'react-native';
+import { FlatList, TouchableOpacity, View, RefreshControl, Animated, Dimensions, Easing, Keyboard, TextInput, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, G, Path } from 'react-native-svg';
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import Svg, { G, Path } from 'react-native-svg';
 
-import Swipeable from 'react-native-gesture-handler/Swipeable';
-
-import { header } from '../../styles/components/header';
 import { theme } from '../../styles/colors/theme';
-import { post } from '../../styles/components/post';
 import { comments as commentsStyle } from '../../styles/components/comments';
 
-import SoundWave from '../../components/SoundWave';
 import Header from '../../components/Header';
 import Post from '../../components/Post';
 
@@ -22,42 +14,197 @@ import Post from '../../components/Post';
 import firebase from 'firebase';
 import 'firebase/firestore';
 import Comment from '../../components/Comment';
-// import { TextInput } from 'react-native-gesture-handler';
+const { height, width } = Dimensions.get("window");
 
 
 const Home = ({ navigation } : any) => {
-    useEffect(() => {
-        checkIfLoggedIn()
-    });
-
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
-    const [commentInputValue, setCommentInputValue] = useState<string>('');
-    const [isFetchingComments, setIsFetchingComments] = useState(false);
+    
+    useEffect(() => {
+        checkIfLoggedIn();
+        getPosts();
+    }, []);
 
-    // ! ======================== comment section ============================
+    const checkIfLoggedIn = () => {
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                setCurrentUser(user);
+            } else {
+                firebase.auth().signOut()
+                navigation.navigate('Login', { error: 'not logged in' });
+            }
+        })
+    }
+    const [data, setData] = useState<firebase.firestore.DocumentData[]>([]);
+    const [isFetching, setIsFetching] = useState(false);
 
+    
     const [comments, setComments] = useState<firebase.firestore.DocumentData[]>([]);
-    const [commentSectionPostId, setcommentSectionPostId] = useState<string>();
+    const [commentSectionPostId, setCommentSectionPostId] = useState<string>();
+    const [commentInputValue, setCommentInputValue] = useState<string>('');
+
+    // Used for swipe down gesture to close commentsection
+    const [onTouchStartComments, setOnTouchStartComments] = useState<number | undefined>()
+    const [commentsScrollLocation, setCommentsScrollLocation] = useState<number>(0);
 
     // State variables / variables for popup-animation
-    const { height, width } = Dimensions.get("window");
-    const formHeight = height / 10 * 9;
-    const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
-    const [formAnimation, setFormAnimation] = useState({
-        positionY: new Animated.Value(isFormOpen ? 0 : formHeight)
+    const commentSectionHeight = height / 10 * 9;
+    const [isCommentSectionOpen, setIsCommentSectionOpen] = useState<boolean>(false);
+    const [commentSectionAnimation, setCommentSectionAnimation] = useState({
+        positionY: new Animated.Value(isCommentSectionOpen ? 0 : commentSectionHeight),
     });
-    const animatedTransform = {
-        transform: [{translateY: formAnimation.positionY}],
+    const commentSectionAnimatedTransform = {
+        transform: [{translateY: commentSectionAnimation.positionY}],
+    }
+
+    
+    // Send Comment Button Color Animation
+    const [sendButtonColorAnimation, setSendButtonColorAnimation] = useState(new Animated.Value(0));
+    const boxInterpolation =  sendButtonColorAnimation.interpolate({
+        inputRange: [0, 1],
+        // outputRange:['rgb(255,255,255)', 'rgb(112,203,255)'],
+        outputRange:['rgb(255,255,255)', 'rgb(168,0,255)'],
+    })
+    const sendButtonAnimatedColorValue = {
+        backgroundColor: boxInterpolation,
     }
     
+    // Send Comment Button Translate Animation
+    const [sendButtonAnimation, setSendButtonAnimation] = useState(new Animated.Value(0));
+    const sendButtonAnimatedTransformValue = {
+        transform: [{translateX: sendButtonAnimation}],
+    }
 
+    const renderPost = ({item}: any) => {
+        return (
+            <Post postData={item} showComments={showCommentSection} ></Post>
+        )
+    }
     const renderComment = (comment: any) => {
         return (
             <Comment comment={comment} userId={comment.userId}></Comment>
         )
     }
 
-    const toggleForm = (hideShow: string | null = null) => {
+
+    // TODO: ========== Handle Keyboard Up an Down in Comment Section ==========
+    const animateSendButton = (status: string) => {
+        if (status == 'success') {
+            Animated.sequence([
+                Animated.timing(sendButtonAnimation, {
+                    toValue: 50,
+                    duration: 350,
+                    useNativeDriver: true,
+                    easing: Easing.out(Easing.elastic(2))
+                }),
+                Animated.timing(sendButtonAnimation, {
+                    toValue: -50,
+                    duration: 0,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(sendButtonAnimation, {
+                    toValue: 0,
+                    duration: 350,
+                    useNativeDriver: true,
+                    easing: Easing.in(Easing.elastic(2))
+                })
+            ]).start(() => {
+                animateColors(false);
+                setCommentInputValue('');
+            })
+        } else if(status == 'error') {
+            Animated.sequence([
+                Animated.timing(sendButtonAnimation, {
+                    toValue: -5,
+                    duration: 50,
+                    useNativeDriver: true,
+                    easing: Easing.out(Easing.elastic(1))
+                }),
+                Animated.timing(sendButtonAnimation, {
+                    toValue: 5,
+                    duration: 50,
+                    useNativeDriver: true,
+                    easing: Easing.out(Easing.elastic(1))
+                }),
+                Animated.timing(sendButtonAnimation, {
+                    toValue: -5,
+                    duration: 50,
+                    useNativeDriver: true,
+                    easing: Easing.out(Easing.elastic(1))
+                }),
+                Animated.timing(sendButtonAnimation, {
+                    toValue: 5,
+                    duration: 50,
+                    useNativeDriver: true,
+                    easing: Easing.out(Easing.elastic(1))
+                }),
+                Animated.timing(sendButtonAnimation, {
+                    toValue: 0,
+                    duration: 50,
+                    useNativeDriver: true,
+                    easing: Easing.in(Easing.elastic(1))
+                })
+            ]).start()
+        }
+    }
+
+    const animateColors = (isIn: boolean) => {
+        console.log('Starting animation')
+        Animated.timing(sendButtonColorAnimation, {
+            toValue: isIn ? 1 : 0,
+            duration: 500,
+            useNativeDriver: false,
+        }).start()
+    }
+
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener(
+            'keyboardDidShow',
+            (e) => {
+                console.log(e.endCoordinates)
+                setIsCommentSectionOpen(state => {
+                    if (state) {
+                        Animated.timing(commentSectionAnimation.positionY, {
+                            toValue: e.endCoordinates.height,
+                            duration: 0,
+                            useNativeDriver: true,
+                            easing: Easing.linear,
+                        }).start();
+                    }
+
+                    return state;
+                });
+            }
+        );
+        const keyboardDidHideListener = Keyboard.addListener(
+            'keyboardDidHide',
+            (e) => {
+                console.log(e.endCoordinates);
+                setIsCommentSectionOpen(state => {
+                    if (state) {
+                        Animated.timing(commentSectionAnimation.positionY, {
+                            toValue: 0,
+                            duration: 0,
+                            useNativeDriver: true,
+                            easing: Easing.linear,
+                        }).start();
+                    }
+
+                    return state;
+                });
+            }
+        );
+        
+        return () => {
+            keyboardDidHideListener.remove();
+            keyboardDidShowListener.remove();
+        };
+    }, []);
+
+    
+    // ! ========== Comment Section ==========
+
+    const toggleCommentSection = (hideShow: string | null = null) => {
         if (hideShow != null) {
             if (hideShow == 'hide') {
 
@@ -66,27 +213,81 @@ const Home = ({ navigation } : any) => {
             }
         }
 
-        setIsFormOpen((state: boolean) => {
-            Animated.timing(formAnimation.positionY, {
-                toValue: state ? formHeight : 0,
-                duration: 250,
+        setIsCommentSectionOpen((state: boolean) => {
+            Animated.timing(commentSectionAnimation.positionY, {
+                toValue: state ? commentSectionHeight : 0,
+                duration: 350,
                 useNativeDriver: true,
-                easing: Easing.inOut(Easing.quad),
+                easing: Easing.in(Easing.elastic(1)),
+                // easing: Easing.inOut(Easing.quad),
             }).start();
             
             if (hideShow) {
                 if (hideShow == 'hide') {
-                    setIsFormOpen(false);
+                    setIsCommentSectionOpen(false);
                 } else if (hideShow == 'show') {
-                    setIsFormOpen(true);
+                    setIsCommentSectionOpen(true);
                 }
             } else {
-                setIsFormOpen(state ? false : true);
+                setIsCommentSectionOpen(state ? false : true);
             }
 
             return state;
         });
-        if (!isFormOpen) setComments([]);
+        if (!isCommentSectionOpen) setComments([]);
+    }
+
+    const showCommentSection = (postId: string) => {
+        // setIsModalVisible(!isModalVisible);
+
+        setCommentSectionPostId(postId);
+        toggleCommentSection('hide');
+        getComments(postId);
+        toggleCommentSection();
+    }
+
+
+    // ! ========== Firebase Read and Write Functions ==========
+
+    const getPosts = async () => {
+        if (!isFetching) setIsFetching(true);
+        await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('finished', '==', false)
+            .get()
+            .then((querySnapshot) => {
+                let newData: firebase.firestore.DocumentData[] = [];
+                querySnapshot.forEach((doc) => {
+                    //@ts-ignore
+                    let data = doc.data();
+                    data['id'] = doc.id;
+                    newData.push(data);
+                });
+                setData(newData);
+            })
+            .catch((error) => {
+                console.log("Error getting documents: ", error);
+            });
+        console.log('Done fetching comments');
+        setIsFetching(false);
+    }
+
+    const getComments = (postId: string) => {
+        firebase.firestore().collection('comments')
+        .where('post_id', '==', postId)
+        .orderBy('isCorrect', 'desc')
+        .orderBy('created_at', 'desc')
+        .get()
+        .then((snapshot) => {
+            let commentsArray: firebase.firestore.DocumentData[] = [];
+            snapshot.forEach((doc) => {
+                //@ts-ignore
+                let comment = doc.data();
+                comment['id'] = doc.id;
+                commentsArray.push(comment);
+            });
+            setComments(commentsArray)
+        }).catch((error) => {
+            console.log("Error getting comments:", error);
+        });
     }
 
     const saveComment = (comment: string, postId: string) => {
@@ -105,186 +306,6 @@ const Home = ({ navigation } : any) => {
         })
     }
 
-    const getComments = (postId: string) => {
-        setIsFetchingComments(true);
-        firebase.firestore().collection('comments')
-        .where('post_id', '==', postId)
-        .orderBy('isCorrect', 'desc')
-        .orderBy('created_at', 'desc')
-        .get()
-        .then((snapshot) => {
-            let commentsArray: firebase.firestore.DocumentData[] = [];
-            snapshot.forEach((doc) => {
-                //@ts-ignore
-                let comment = doc.data();
-                comment['id'] = doc.id;
-                commentsArray.push(comment);
-            });
-            setComments(commentsArray)
-        }).catch((error) => {
-            console.log("Error getting comments:", error);
-        });
-        setIsFetchingComments(false);
-    }
-
-    const showCommentSection = (postId: string) => {
-        setcommentSectionPostId(postId);
-        toggleForm('hide');
-        getComments(postId);
-        toggleForm();
-    }
-
-    // ! =======================================================================
-
-    const checkIfLoggedIn = () => {
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                setCurrentUser(user);
-                // console.log(user.uid);
-            } else {
-                firebase.auth().signOut()
-                navigation.navigate('Login', { error: 'not logged in' });
-            }
-        })
-    }
-
-    
-    useEffect(() => {
-        getPosts();
-    }, [])
-
-    const [data, setData] = useState<firebase.firestore.DocumentData[]>([]);
-
-    const dbf = firebase.firestore();
-
-    const [isFetching, setIsFetching] = useState(false);
-    	
-
-    const onRefresh = () => {
-        setIsFetching(true);
-        getPosts();
-    }
-
-    //! ============================================================================================
-
-
-    const [isRecording, setIsRecording] = useState(false);
-    const [recording, setRecording] = useState<Audio.Recording | null>(null);
-    const [sound, setSound] = useState<Audio.Sound | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-
-    const [onTouchStartComments, setOnTouchStartComments] = useState<number | undefined>()
-    const [commentsScrollLocation, setCommentsScrollLocation] = useState<number>(0);
-
-    async function startRecording() {
-        try {
-            console.log('Requesting permissions..');
-            await Audio.requestPermissionsAsync();
-            await Audio.setAudioModeAsync({
-                allowsRecordingIOS: true,
-                playsInSilentModeIOS: true,
-            }); 
-  
-            // Start recording
-            console.log('Starting recording..');
-            const _recording = new Audio.Recording();
-            _recording.setOnRecordingStatusUpdate((rec) => {console.log(rec)})
-            await _recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
-        
-            setRecording(_recording);
-            await _recording.startAsync();
-  
-            console.log('Recording started');
-            setIsRecording(true);
-        } catch (err) {
-            console.error('Failed to start recording', err);
-        }
-    }
-    
-    async function stopRecording() {
-        try {
-            // @ts-ignore
-            await recording.stopAndUnloadAsync();
-        } catch (error) {
-            console.error(error);
-        }
-        // @ts-ignore
-        const info = await FileSystem.getInfoAsync(recording.getURI());
-        console.log(`FILE INFO: ${JSON.stringify(info)}`);
-        
-        setIsRecording(false);
-    }
-
-    const uploadRecording = async () => {
-        let soundObject = new Audio.Sound();
-        try {
-            await soundObject.loadAsync(require('../../assets/sound2.wav'));
-            soundObject.playAsync();
-        } catch (e) {
-            console.log('ERROR Loading Audio', e);
-        }
-    }
-
-    const saveRecording = async (description: string) => {
-
-        const uri: string | null | undefined = recording?.getURI();
-
-        if (uri) {
-            let response = await fetch(uri);
-            let blob = await response.blob();
-
-
-            const firestoreRef = firebase.firestore().collection('posts').doc();
-
-            firebase.storage().ref().child(`recordings/${currentUser?.uid}/${firestoreRef.id}.m4a`)
-            .put(blob).then((snapshot) => {
-                
-                snapshot.ref.getDownloadURL().then((url) => {
-                    // Write to Firestore
-                    firestoreRef.set({
-                        created_at: Date.now(),
-                        description: description,
-                        recording: url,
-                        recordingDuration: recording?._finalDurationMillis,
-                        userId: currentUser?.uid,
-                    });
-                });
-            });
-            console.log('Uploaded successfully: 🎉🎉🎉');
-
-        }
-    }
-
-    //! ============================================================================================
-
-      const getPosts = async () => {
-        setIsFetching(true);
-        await dbf.collection("posts").orderBy('created_at', 'desc').where('finished', '==', false)
-            .get()
-            .then((querySnapshot) => {
-                let newData: firebase.firestore.DocumentData[] = [];
-                querySnapshot.forEach((doc) => {
-                    //@ts-ignore
-                    let test = doc.data();
-                    test['id'] = doc.id;
-                    newData.push(test);
-                });
-                // console.log(newData);
-                setData(newData);
-                setIsFetching(false);
-            })
-            .catch((error) => {
-                console.log("Error getting documents: ", error);
-            });
-    }
-
-
-    const renderItem = ({item}: any) => {
-        return (
-            <Post postData={item} showComments={showCommentSection} ></Post>
-        )
-    }
-
     return (
 
         <SafeAreaView style={{backgroundColor: theme[100], overflow: 'hidden'}}>
@@ -292,16 +313,13 @@ const Home = ({ navigation } : any) => {
 
             <Header showProfilePicture={true} userId={currentUser?.uid}/>
             <FlatList
-                // onScroll={(e) => {
-                //     console.log(e.nativeEvent.contentOffset.y)
-                // }}
                 contentContainerStyle={{ paddingBottom: 100, minHeight: '90%' , paddingTop: 8}}
                 data={data} 
-                renderItem={renderItem}
+                renderItem={renderPost}
                 keyExtractor={(post): any => post.id.toString()}
                 refreshControl={
                     <RefreshControl
-                        onRefresh={() => onRefresh()}
+                        onRefresh={() => getPosts()}
                         refreshing={isFetching}
                         title="Pull to refresh"
                         tintColor="#474574"
@@ -309,16 +327,15 @@ const Home = ({ navigation } : any) => {
                     />
                 }
             />
-
             
-            {/* ---------- COMMENT SETCION ----------- */}
+            {/* ---------- COMMENT SECTION ----------- */}
             <Animated.View
-                style={[commentsStyle.commentSection, animatedTransform]}
+                style={[commentsStyle.commentSection, commentSectionAnimatedTransform]}
             >
                 <TouchableOpacity
                     onPress={() => {
                         Keyboard.dismiss();
-                        toggleForm('hide');
+                        toggleCommentSection('hide');
                     }}
                     style={[commentsStyle.closeCommentsButton]}
                 >
@@ -357,7 +374,7 @@ const Home = ({ navigation } : any) => {
                         if (commentsScrollLocation < 20) {
                             if (onTouchStartComments) {
                                 if ((e.nativeEvent.locationY - onTouchStartComments) >= 30) {
-                                    toggleForm()
+                                    toggleCommentSection()
                                 }
                             }
                         }
@@ -386,6 +403,11 @@ const Home = ({ navigation } : any) => {
                         <TextInput
                             placeholder="Write a comment..."
                             onChangeText={(value) => {
+                                if (value && value != '') {
+                                    animateColors(true);
+                                } else {
+                                    animateColors(false);
+                                }
                                 setCommentInputValue(value)
                             }}
                             value={commentInputValue}
@@ -394,35 +416,57 @@ const Home = ({ navigation } : any) => {
                             style={[commentsStyle.commentInputField]}
                         >
                         </TextInput>
-                        <TouchableOpacity
-                            style={{
-                                position: 'absolute',
-                                right: 5,
-                                aspectRatio: 1,
-                                borderRadius: 50,
-                                height: '80%',
-                                alignSelf: 'center',
-                                backgroundColor: theme[100] ,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
 
+                        <TouchableOpacity
                             onPress={() => {
                                 if (commentInputValue && commentInputValue != '') {
                                     saveComment(commentInputValue, commentSectionPostId ? commentSectionPostId : '');
-                                    setCommentInputValue('')
+                                    animateSendButton('success');
                                 } else {
+                                    animateSendButton('error');
                                     console.log('Please fill in a comment!')
                                 }
                             }}
+                            style={[commentsStyle.sendCommentButton]}
                         >
-                            <Svg style={{width: '50%', height: '50%'}} viewBox="0 0 512 441.779">
-                                <Path
-                                    fill="black"
-                                    data-name="Path 20"
-                                    d="M481.508 175.224L68.414 3.815A49.442 49.442 0 001.557 61.697l40.594 159.192L1.557 380.081a49.441 49.441 0 0066.857 57.882l413.094-171.409a49.44 49.44 0 000-91.33zm-11.5 63.62L56.916 410.253a19.441 19.441 0 01-26.288-22.764l38.659-151.6h417.722c8.285 0 15.788-6.715 15.788-15s-7.5-15-15.788-15H69.288l-38.66-151.6a19.44 19.44 0 0126.287-22.76l413.094 171.405a19.439 19.439 0 010 35.91z"
-                                />
-                            </Svg>
+                            <Animated.View
+                                style={[{
+                                    width: '100%',
+                                    height: '100%',
+                                    borderRadius: 50,
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    overflow: 'hidden',
+                                }, sendButtonAnimatedColorValue]}
+                            >
+                                <Animated.View
+                                    style={[{
+                                        width: '100%',
+                                        height: '100%',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                    }, sendButtonAnimatedTransformValue]}
+                                >    
+                                    {
+                                        commentInputValue ? 
+                                            <Svg style={{width: '50%', height: '50%'}} viewBox="0 0 512 441.779">
+                                                <Path 
+                                                    fill={theme.comments}
+                                                    data-name="Path 20"
+                                                    d="M481.508 175.224L68.414 3.815A49.442 49.442 0 001.557 61.697l40.594 159.192L1.557 380.081a49.441 49.441 0 0066.857 57.882l413.094-171.409a49.44 49.44 0 000-91.33zm-11.5 63.62L56.916 410.253a19.441 19.441 0 01-26.288-22.764l38.659-151.6h417.722c8.285 0 15.788-6.715 15.788-15s-7.5-15-15.788-15H69.288l-38.66-151.6a19.44 19.44 0 0126.287-22.76l413.094 171.405a19.439 19.439 0 010 35.91z"
+                                                />
+                                            </Svg>
+                                        : 
+                                            <Svg style={{width: '50%', height: '50%'}} viewBox="0 0 512 441.779">
+                                                <Path 
+                                                    fill={'#B7B7B7'}
+                                                    data-name="Path 20"
+                                                    d="M481.508 175.224L68.414 3.815A49.442 49.442 0 001.557 61.697l40.594 159.192L1.557 380.081a49.441 49.441 0 0066.857 57.882l413.094-171.409a49.44 49.44 0 000-91.33zm-11.5 63.62L56.916 410.253a19.441 19.441 0 01-26.288-22.764l38.659-151.6h417.722c8.285 0 15.788-6.715 15.788-15s-7.5-15-15.788-15H69.288l-38.66-151.6a19.44 19.44 0 0126.287-22.76l413.094 171.405a19.439 19.439 0 010 35.91z"
+                                                />
+                                            </Svg>
+                                    }
+                                </Animated.View>
+                            </Animated.View>
                         </TouchableOpacity>
                     </View>
 

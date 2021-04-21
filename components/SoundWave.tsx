@@ -27,22 +27,40 @@ const SoundWave = (props: any) => {
         }
     }
 
-    const { postId, memo, duration } = props;
+    const { postId, memo, duration, metering } = props;
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [playbackTime, setPlaybackTime] = useState<string>(convertMillisToMinSec(duration));
     const [isPaused, setIsPaused] = useState(false);
     const [shouldPause, setShouldPause] = useState(false);
-    const [sound, setSound] = useState<Audio.Sound | undefined>(undefined)
+    const [soundObject, setSoundObject] = useState<Audio.Sound | undefined>(undefined)
 
     
+    
+
     // ! ====================================================================
     
-    const playSong = async (url: string) => {
-        let soundObject = new Audio.Sound();
+    const playSound = async (url: string) => {
         try {
-            await soundObject.loadAsync({ uri: url });
-            soundObject.playAsync();
+            let {sound, status} = await Audio.Sound.createAsync({uri: memo})
+            
+            sound.setStatusAsync({ progressUpdateIntervalMillis: 100 })
+        
+            sound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
+                if (status.isLoaded && status.durationMillis) {
+                    const totalTime: number = status.durationMillis;
+                    const currentTime: number = status.positionMillis;
+                    setPlaybackTime(convertMillisToMinSec((totalTime - currentTime )));
+                    
+                    if (status.didJustFinish) {
+                        setIsPlaying(false);
+                        setPlaybackTime(convertMillisToMinSec(duration));
+                    }
+                }
+            });
+
+            sound.playAsync();
+            setSoundObject(sound);
         } catch (e) {
             console.log('ERROR Loading Audio', e);
         }
@@ -59,9 +77,45 @@ const SoundWave = (props: any) => {
         return Math.floor((x - Math.floor(x)) * (max - min) + min);
     }
 
+    const reduceArraySize = (array: Array<number>, outputSize: number): Array<number> => {
+        let reducedArray: Array<number> = [];
+        console.log(array.length);
     
+        if (array.length > outputSize) {
+            let averageNumber = Math.floor(array.length / outputSize);
+            
+            for (let i = 0; i < outputSize; i++) {
+                let average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
+                if (i == outputSize - 1) {
+                    // reducedArray.push(Math.floor(average(array.slice(i, outputSize))))
+                    reducedArray.push(Math.floor(Math.max(...array.slice(i, outputSize))))
+                } else {
+                    // reducedArray.push(Math.floor(average(array.slice(i, i+averageNumber))))
+                    reducedArray.push(Math.floor(Math.max(...array.slice(i, i+averageNumber))))
+                }
+            }
+        } else {
+            console.log(Math.floor(outputSize / array.length))
+            const rest = outputSize - (array.length * Math.floor(outputSize / array.length));
+            let restCount = 0;
+            console.log(rest)
+            for (let i = 0; i < array.length; i++) {
+                for (let j = 0; j < Math.floor(outputSize / array.length); j++) {
+                    reducedArray.push(array[i])
+                }
+                if (restCount < rest) {
+                    reducedArray.push(array[i]);
+                    restCount+=1;
+                }
+            }
+    
+            console.log(reducedArray.length)
+        }
+    
+        return reducedArray;
+    }
 
-    const createSoundWaves = (id: string) => {
+    const createSoundWaves2 = (id: string) => {
         let jsxObject = [];
         let seed = postId+15;
         for (let i = 0; i < 30 ; i++) {
@@ -71,61 +125,37 @@ const SoundWave = (props: any) => {
         return jsxObject;
     }
 
-    const playSound = async () => {
-        const soundObject = await Audio.Sound.createAsync({uri: memo});
-        setSound(soundObject.sound);
-
-        // @ts-ignore
-        const totalTime = soundObject.status.durationMillis;
-        
-        sound?.setStatusAsync({ progressUpdateIntervalMillis: 100 })
-        
-        sound?.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
-            if (status.isLoaded) {
-                const currentTime = status?.positionMillis;
-                setPlaybackTime(convertMillisToMinSec((totalTime - currentTime )));
-                
-                if (status.didJustFinish) {
-                    setIsPlaying(false);
-                    setPlaybackTime(convertMillisToMinSec(duration));
-                }
-                
-                // if (!isPaused && shouldPause) {
-                //     console.log('pausing...')
-                //     sound.pauseAsync()
-                // }
-            }
-        });
-  
-        await sound?.playAsync();
-        // await sound.unloadAsync();
+    const createSoundWaves = (array: number[], numWaves: number) => {
+        let reducedArray = reduceArraySize(array, numWaves);
+        console.log(convertMillisToMinSec(duration) ,reducedArray)
+        console.log('Minimum: ', Math.min(...reducedArray));
+        console.log('Maximum: ', Math.max(...reducedArray));
+        let jsxObject = [];
+        let test = [];
+        for (let i = 0; i < reducedArray.length; i++) {
+            let height = ((reducedArray[i] + 160) / 160) * 20 + 5
+            test.push(height)
+            jsxObject.push(<View key={i.toString()} style={{...soundWave.waveLine, height: height}}></View>);
+        }
+        return jsxObject;
     }
-
-    // const playSound = async () => {
-    //     const sound = await Audio.Sound.createAsync({uri: memo});
-    //     setSound(sound.sound);
-
-    //     // @ts-ignore
-    //     const totalTime = sound.status.durationMillis;
-        
-        
-  
-    //     await sound.sound.playAsync();
-    // }
 
     return (
         <LinearGradient colors={[theme[800], theme[700]]} style={[soundWave.soundWave]}>
-            {/* <View style={[soundWave.soundwaveButtons]}>
-            </View> */}
             {
                 !isPlaying ? 
                 <TouchableOpacity 
                     style={[soundWave.button]}
                     onPress={() => {
-                        setIsPlaying(true);
-                        setShouldPause(false);
-                        setIsPaused(false);
-                        playSound()
+
+                        if (isPaused && soundObject) {
+                            soundObject.playAsync();
+                            setIsPaused(false);
+                            setIsPlaying(true);
+                        } else {
+                            playSound(memo)
+                            setIsPlaying(true);
+                        }
                     }}
                 >
                     <Svg width={24} height={24} viewBox="0 0 24 24">
@@ -151,7 +181,10 @@ const SoundWave = (props: any) => {
                     style={[soundWave.button]}
                     onPress={() => {
                         setIsPlaying(false);
-                        sound?.stopAsync()
+                        if(soundObject) {
+                            soundObject.pauseAsync();
+                            setIsPaused(true);
+                        }
                     }}
                 >
                     <Svg width={24} height={24} viewBox="0 0 24 24" {...props}>
@@ -187,8 +220,16 @@ const SoundWave = (props: any) => {
             
             <Text style={[soundWave.time]}>{playbackTime}</Text>
             <View style={[soundWave.wave]}>
-                {/* <TouchableOpacity onPress={() => {createSoundWave()}}><Text>test</Text></TouchableOpacity> */}
-                {createSoundWaves(postId.toString())}
+
+            {/* {createSoundWaves(metering, 30)} */}
+
+            {
+                metering ? 
+                createSoundWaves(metering, 30)
+                :
+                createSoundWaves2(postId)
+            }
+
             </View>
         </LinearGradient>
     );

@@ -32,7 +32,6 @@ export default function App( {navigation}: any ) {
 					headerMode='none'
 					initialRouteName='Home'
 				>
-				
 					<Stack.Screen component={index} name='Home'></Stack.Screen>
 					<Stack.Screen component={Login} name='Login'></Stack.Screen>
 					<Stack.Screen component={Register} name='Register'></Stack.Screen>

@@ -6,7 +6,7 @@ const { height, width } = Dimensions.get("window");
 
 export const comments = StyleSheet.create({
     container: {
-        marginTop: 46 + 40,
+        marginTop: 46 + 60,
         width: '100%',
     },
     commentContainer: {
@@ -31,7 +31,7 @@ export const comments = StyleSheet.create({
         alignItems: 'center',
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
-        height: height / 10 * 5,
+        height: height / 10 * 9,
         // height: Dimensions.get('screen').height,
         elevation: 10,
         zIndex: 1000,
@@ -47,7 +47,7 @@ export const comments = StyleSheet.create({
         height: 60,
         width: '100%',
         position: 'absolute',
-        top: 10,
+        top: 32,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -74,6 +74,17 @@ export const comments = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
         lineHeight: 16,
+    },
+    sendCommentButton: {
+        position: 'absolute',
+        right: 5,
+        aspectRatio: 1.5,
+        borderRadius: 50,
+        height: '80%',
+        alignSelf: 'center',
+        backgroundColor: theme[100] ,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
 });

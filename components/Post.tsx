@@ -87,7 +87,7 @@ const Post = (props: any) => {
             </View>
             <Text style={[post.description]}>{postData.description}</Text>
 
-            <SoundWave postId={1} memo={postData.recording} duration={postData.recordingDuration}></SoundWave>
+            <SoundWave postId={1} memo={postData.recording} duration={postData.recordingDuration} metering={postData.metering}></SoundWave>
 
             <TouchableOpacity
                 onPress={() => {

@@ -169,10 +169,11 @@ const Login = ({ navigation } : any) => {
     const toggleSignInForm = () => {
         setIsSignInOpen((state: boolean) => {
             Animated.timing(signInFormAnimation.positionY, {
-                toValue: state ? signInFormHeight : 0,
-                duration: 250,
+                toValue: state ? signInFormHeight : 20,
+                duration: 350,
                 useNativeDriver: true,
-                easing: Easing.inOut(Easing.quad),
+                // easing: Easing.inOut(Easing.quad),
+                easing: Easing.in(Easing.elastic(1)),
             }).start();
 
             setIsSignInOpen(state ? false : true);
@@ -183,10 +184,11 @@ const Login = ({ navigation } : any) => {
     const toggleSignUpForm = () => {
         setIsSignUpOpen((state) => {
             Animated.timing(signUpFormAnimation.positionY, {
-                toValue: state ? signUpFormHeight : 0,
-                duration: 250,
+                toValue: state ? signUpFormHeight : 50,
+                duration: 350,
                 useNativeDriver: true,
-                easing: Easing.inOut(Easing.quad),
+                // easing: Easing.inOut(Easing.quad),
+                easing: Easing.in(Easing.elastic(1)),
             }).start();
 
             setIsSignUpOpen(state ? false : true);

@@ -41,6 +41,7 @@ const index = ({ navigation } : any) => {
     const [recording, setRecording] = useState<Audio.Recording | null>(null);
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
     const [canStop, setCanStop] = useState(false);
+    const [metering, setMetering] = useState<Array<number>>([])
 
     // const [loadingBarTransform, setLoadingBarTransform] = useState([{translateX: - width}])
 
@@ -77,6 +78,42 @@ const index = ({ navigation } : any) => {
         })
     }
 
+    const reduceArraySize = (array: Array<number>, outputSize: number): Array<number> => {
+        let reducedArray: Array<number> = [];
+        console.log(array.length);
+    
+        if (array.length > outputSize) {
+            let averageNumber = Math.floor(array.length / outputSize);
+            
+            for (let i = 0; i < outputSize; i++) {
+                let average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
+                if (i == outputSize - 1) {
+                    reducedArray.push(Math.floor(average(array.slice(i, outputSize))))
+                } else {
+                    reducedArray.push(Math.floor(average(array.slice(i, i+averageNumber))))
+                }
+            }
+        } else {
+            console.log(Math.floor(outputSize / array.length))
+            const rest = outputSize - (array.length * Math.floor(outputSize / array.length));
+            let restCount = 0;
+            console.log(rest)
+            for (let i = 0; i < array.length; i++) {
+                for (let j = 0; j < Math.floor(outputSize / array.length); j++) {
+                    reducedArray.push(array[i])
+                }
+                if (restCount < rest) {
+                    reducedArray.push(array[i]);
+                    restCount+=1;
+                }
+            }
+    
+            console.log(reducedArray.length)
+        }
+    
+        return reducedArray;
+    }
+
     async function startRecording() {
         try {
             console.log('Requesting permissions..');
@@ -88,12 +125,19 @@ const index = ({ navigation } : any) => {
   
             // Start recording
             console.log('Starting recording..');
+
             const _recording = new Audio.Recording();
             _recording.setOnRecordingStatusUpdate(async (rec) => {
-                console.log(isRecording)
-                console.log(rec.metering);
+                // console.log(isRecording)
+                // console.log(rec.metering);
+                if (rec && rec.metering) {
+                    let arr = metering;
+                    arr.push(rec.metering);
+                    setMetering(arr);
+                }
                 
             })
+            _recording.setProgressUpdateInterval(100);
             await _recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
         
             setRecording(_recording);
@@ -115,6 +159,7 @@ const index = ({ navigation } : any) => {
         // @ts-ignore
         const info = await FileSystem.getInfoAsync(recording.getURI());        
         setIsRecording(false);
+        console.log('Metering: 😎', metering);
 
         console.log('recording stopped')
     }
@@ -142,6 +187,8 @@ const index = ({ navigation } : any) => {
                         recordingDuration: recording?._finalDurationMillis,
                         userId: currentUser?.uid,
                         finished: false,
+                        metering: metering,
+                        // metering: reduceArraySize(metering, 30)
                     });
                 });
             });
@@ -150,16 +197,15 @@ const index = ({ navigation } : any) => {
         }
     }
 
-    
 
     const toggleForm = () => {
         setIsFormOpen((state: boolean) => {
             console.info('Sign in form is: ', isFormOpen);
             Animated.timing(formAnimation.positionY, {
-                toValue: state ? formHeight : 0,
-                duration: 250,
+                toValue: state ? formHeight : 20,
+                duration: 350,
                 useNativeDriver: true,
-                easing: Easing.inOut(Easing.quad),
+                easing: Easing.in(Easing.elastic(1)),
             }).start();
 
             console.log('Sign in form: ', state ? false : true);
@@ -175,7 +221,7 @@ const index = ({ navigation } : any) => {
                 tabBarPosition='bottom'
                 tabBarOptions={{
                     tabStyle: {backgroundColor: theme[100], height: 60},
-                    keyboardHidesTabBar: true,
+                    keyboardHidesTabBar: false,
                 }}
             >
                 <Tab.Screen name="Home" component={Home} />
