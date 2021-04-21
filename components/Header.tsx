@@ -16,7 +16,7 @@ const Header = (props: any) => {
 
     useEffect(() => {
         getProfileData(userId);
-    }, [])
+    })
 
     const getProfileData = (userId: string) => {
         firebase.firestore()
@@ -35,14 +35,18 @@ const Header = (props: any) => {
 
     return (
         <View style={header.container}>
-            <TouchableOpacity style={[header.menu]}>
+            <TouchableOpacity style={[header.menu]}
+                onPress={() => {
+                    
+                }}
+            >
                 <Image
                     style={{
                         width: '100%',
                         height: '100%',
                         borderRadius: 50,
                     }}
-                    source={currentUser ? {uri:currentUser?.profile_picture} : require('../assets/icon.png') }
+                    source={currentUser ? {uri:currentUser?.profile_picture} : require('../assets/profile_empty.png') }
                 >
 
                 </Image>

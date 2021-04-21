@@ -115,7 +115,7 @@ const SoundWave = (props: any) => {
         return reducedArray;
     }
 
-    const createSoundWaves2 = (id: string) => {
+    const createSoundWavesRandom = (id: string) => {
         let jsxObject = [];
         let seed = postId+15;
         for (let i = 0; i < 30 ; i++) {
@@ -125,7 +125,7 @@ const SoundWave = (props: any) => {
         return jsxObject;
     }
 
-    const createSoundWaves = (array: number[], numWaves: number) => {
+    const createSoundWavesWithMetering = (array: number[], numWaves: number) => {
         let reducedArray = reduceArraySize(array, numWaves);
         console.log(convertMillisToMinSec(duration) ,reducedArray)
         console.log('Minimum: ', Math.min(...reducedArray));
@@ -221,13 +221,11 @@ const SoundWave = (props: any) => {
             <Text style={[soundWave.time]}>{playbackTime}</Text>
             <View style={[soundWave.wave]}>
 
-            {/* {createSoundWaves(metering, 30)} */}
-
             {
                 metering ? 
-                createSoundWaves(metering, 30)
+                createSoundWavesWithMetering(metering, 30)
                 :
-                createSoundWaves2(postId)
+                createSoundWavesRandom(postId)
             }
 
             </View>

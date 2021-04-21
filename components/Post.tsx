@@ -79,9 +79,9 @@ const Post = (props: any) => {
     return (
         <View style={[post.container ]} key={postData.id.toString()}>
             <View style={[post.titleBox]}>
-                <Image style={[post.profilePic]} source={profileData?.profile_picture ? {uri: profileData.profile_picture} : require('../assets/icon.png')} />
+                <Image style={[post.profilePic]} source={profileData?.profile_picture ? {uri: profileData.profile_picture} : require('../assets/profile_empty.png')} />
                 <View style={{ marginLeft: 16,}}>
-                    <Text style={[post.name]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : ''}</Text>
+                    <Text style={[post.name]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}</Text>
                     <Text>{calcTime(new Date(Date.now()), postData.created_at)}</Text>
                 </View>
             </View>
