@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-import { Dimensions, Text, TouchableOpacity, View, Image, FlatList, RefreshControl, Animated, ScrollResponderEvent, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { Dimensions, Text, TouchableOpacity, View, Image, FlatList, RefreshControl, Animated, ScrollResponderEvent, NativeSyntheticEvent, NativeScrollEvent, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { theme } from '../../styles/colors/theme';
@@ -11,8 +11,14 @@ import Header from '../../components/Header';
 import { profile } from '../../styles/components/profile';
 import Post from '../../components/Post';
 import Svg, { Path } from 'react-native-svg';
+import { header } from '../../styles/components/header';
 
 const { height, width } = Dimensions.get("window");
+
+const HEADER_EXPANDED_HEIGHT = height / 10 * 4;
+console.log(height)
+// const HEADER_EXPANDED_HEIGHT = 400;
+const HEADER_COLLAPSED_HEIGHT = 60
 
 const Profile = ({ navigation } : any) => {
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
@@ -39,7 +45,6 @@ const Profile = ({ navigation } : any) => {
         })
     }
 
-    // TODO: Create scroll animation to hide header
 
     // ! ========== Filling Posts Flatlist ==========
     const showCommentSection = () => {
@@ -84,15 +89,63 @@ const Profile = ({ navigation } : any) => {
         setIsFetching(false);
     }
 
+    // TODO: ========== Test Scroll Animation ==========
+    const [scrollY, setScrollY] = useState<Animated.Value>(new Animated.Value(0));
+
+    const headerHeight: Animated.AnimatedInterpolation = scrollY.interpolate({
+        inputRange: [0, HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT],
+        outputRange: [HEADER_EXPANDED_HEIGHT, HEADER_COLLAPSED_HEIGHT],
+        extrapolate: 'clamp',
+    });
+
+    const headerContentTranslate: Animated.AnimatedInterpolation = scrollY.interpolate({
+        inputRange: [0, (HEADER_EXPANDED_HEIGHT-HEADER_COLLAPSED_HEIGHT)],
+        outputRange: [0, -200],
+        extrapolate: 'clamp'
+    });
+
+    const headerBackgroundTranslate: Animated.AnimatedInterpolation = scrollY.interpolate({
+        inputRange: [0, (HEADER_EXPANDED_HEIGHT)],
+        outputRange: [0, -100],
+        extrapolate: 'clamp'
+    });
+
+    const headerContentOpacity: Animated.AnimatedInterpolation = scrollY.interpolate({
+        inputRange: [0, HEADER_EXPANDED_HEIGHT-HEADER_COLLAPSED_HEIGHT],
+        outputRange: [1, 0],
+        extrapolate: 'clamp'
+    });
+
+    const smallHeaderOpacity: Animated.AnimatedInterpolation = scrollY.interpolate({
+        inputRange: [250, HEADER_EXPANDED_HEIGHT-HEADER_COLLAPSED_HEIGHT],
+        outputRange: [0, 1],
+        extrapolate: 'clamp'
+    }); 
+
+    // TODO: ========== Test Scroll Animation ==========
+
     return (
         <SafeAreaView  style={{backgroundColor: theme[100]}}>
-            {/* <Header isProfilePage={true} showProfilePicture={true} userId={currentUser?.uid}/> */}
-            <Animated.View 
-                style={[profile.header]}
+            <Animated.View
+                style={[
+                    profile.header,
+                    {
+                        height: headerHeight,
+                        opacity: headerContentOpacity,
+                        transform: [{translateY: headerBackgroundTranslate}],
+                    }
+                ]}
             >
                 
-                <View
-                    style={[profile.headerContent]}
+                <Animated.View
+                    style={[
+                        profile.headerContent,
+                        {
+                            
+                            transform: [{translateY: headerContentTranslate}],
+                            opacity: headerContentOpacity
+                        }
+                    ]}
                 >
 
                     <View style={[profile.profilePictureContainer]}>
@@ -133,17 +186,29 @@ const Profile = ({ navigation } : any) => {
                         </View>
                     </View>
 
-                </View>
+                </Animated.View>
 
                 <Image
                     source={require('../../assets/background.png')}
                     style={[profile.headerBackground]}
+                    resizeMethod='scale'
                 >
                 </Image>
             </Animated.View>
 
+            <Animated.View
+                style={[
+                    header.container, {
+                        justifyContent: 'center',
+                        opacity: smallHeaderOpacity,
+                    },
+                ]}
+            >
+                <Text style={[header.logo]}>Felix Vandemaele</Text>
+            </Animated.View>
+
             <FlatList
-                contentContainerStyle={{ paddingBottom: 450, minHeight: '90%' , paddingTop: 16}}
+                contentContainerStyle={{ paddingBottom: 0,  paddingTop: HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT - 16}}
                 data={data} 
                 renderItem={renderPost}
                 keyExtractor={(post): any => post.id.toString()}
@@ -156,12 +221,22 @@ const Profile = ({ navigation } : any) => {
                         titleColor="#474574"
                     />
                 }
-                onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) => {
-                    if (e.nativeEvent.contentOffset.y > 50) {
-                        
-                    }
-                    // console.log(e.nativeEvent.contentOffset)
-                }}
+
+                scrollEventThrottle={16}
+
+                onScroll={
+                    Animated.event([
+                        { 
+                            nativeEvent: {
+                                contentOffset: {
+                                    y: scrollY
+                                }
+                            }
+                        }
+                    ], {useNativeDriver: false})
+                }
+
+                showsVerticalScrollIndicator={false}
             />
 
         </SafeAreaView>

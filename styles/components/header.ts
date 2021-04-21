@@ -15,6 +15,7 @@ export const header = StyleSheet.create({
     logo: {
         textAlign: 'center',
         fontSize: 28,
+        lineHeight: 28,
         fontWeight: 'bold',
     },
     menu: {

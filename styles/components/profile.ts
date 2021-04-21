@@ -7,34 +7,31 @@ const { height, width } = Dimensions.get("window");
 export const profile = StyleSheet.create({
     header: {
         width: '100%',
-        // height: height / 10 * 4,
-        // backgroundColor: 'blue',
         alignItems: 'center',
-        overflow: 'hidden',
-        // backgroundColor: theme[100],
-        // backgroundColor: 'green',
-        padding: 0
+        zIndex: 20,
+        position: 'absolute', 
+        top: 0, 
+        left: 0,
+        height: height / 10 * 4,
     },
     headerContent: {
         width: '100%',
         alignItems: 'center',
         zIndex: 10,
-        // backgroundColor: 'red',
-        // paddingBottom: 32
+        marginTop: 30,
     },
     headerBackground: {
-        width: '100%',
-        height: '100%',
         position: 'absolute',
-        bottom: -height / 10 * 1,
-        zIndex: 1,
+        bottom: 0,
+        width: width,
+        height: width * 0.5450684285040113,
+        resizeMode: 'contain',
     },
     profilePictureContainer: {
         justifyContent: 'center',
         alignItems: 'center',
         width: '30%',
         aspectRatio: 1,
-        overflow: 'hidden',
         marginTop: 30,
         zIndex: 10,
     },
@@ -66,12 +63,9 @@ export const profile = StyleSheet.create({
     },
     info: {
         width: '100%',
-        // backgroundColor: 'red',
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 32,
-        paddingBottom: 32
     },
     infoText: {
         color: theme[100],
