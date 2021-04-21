@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { Text, TouchableOpacity, View, Image, Animated } from 'react-native';
+import { Text, TouchableOpacity, View, Image, Animated, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { post } from '../styles/components/post';
 import SoundWave from './SoundWave';
@@ -74,7 +74,10 @@ const Comment = (props: any) => {
                 style={[comments.commentProfilePic]}
                 source={profileData?.profile_picture ? {uri: profileData.profile_picture} : require('../assets/icon.png')}
             />
-            <View style={[comments.commentTextContainer]}>
+            <TouchableWithoutFeedback 
+                onPress={() => {console.log('correct')}}
+                style={[comments.commentTextContainer]}
+            >
                 <View
                     style={{
                         flexDirection: 'row',
@@ -132,9 +135,28 @@ const Comment = (props: any) => {
                         </Svg>
                     </View>
                     : 
-                    <></>
+                    <TouchableOpacity 
+                        style={{
+                            position: 'absolute',
+                            backgroundColor: theme.checkmark,
+                            width: 24,
+                            height: 24,
+                            top: 8,
+                            right: 8,
+                            borderRadius: 8,
+                            padding: 6
+                        }}
+                    >
+                        <Svg style={{width: '100%', height: '100%', }} viewBox="0 0 19.585 15.208">
+                            <Path
+                                fill="white"
+                                data-name="Path 19"
+                                d="M7.499 14.915a1 1 0 01-1.414 0L.439 9.268a1.5 1.5 0 010-2.121l.707-.707a1.5 1.5 0 012.121 0l3.525 3.525L16.317.44a1.5 1.5 0 012.121 0l.707.707a1.5 1.5 0 010 2.121z"
+                            />
+                        </Svg>
+                    </TouchableOpacity>
                 }
-            </View>
+            </TouchableWithoutFeedback>
 
         </View>
     )
