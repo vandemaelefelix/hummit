@@ -79,7 +79,7 @@ const SoundWave = (props: any) => {
 
     const reduceArraySize = (array: Array<number>, outputSize: number): Array<number> => {
         let reducedArray: Array<number> = [];
-        console.log(array.length);
+        // console.log(array.length);
     
         if (array.length > outputSize) {
             let averageNumber = Math.floor(array.length / outputSize);
@@ -95,7 +95,7 @@ const SoundWave = (props: any) => {
                 }
             }
         } else {
-            console.log(Math.floor(outputSize / array.length))
+            // console.log(Math.floor(outputSize / array.length))
             const rest = outputSize - (array.length * Math.floor(outputSize / array.length));
             let restCount = 0;
             console.log(rest)
@@ -109,7 +109,7 @@ const SoundWave = (props: any) => {
                 }
             }
     
-            console.log(reducedArray.length)
+            // console.log(reducedArray.length)
         }
     
         return reducedArray;
@@ -127,9 +127,9 @@ const SoundWave = (props: any) => {
 
     const createSoundWavesWithMetering = (array: number[], numWaves: number) => {
         let reducedArray = reduceArraySize(array, numWaves);
-        console.log(convertMillisToMinSec(duration) ,reducedArray)
-        console.log('Minimum: ', Math.min(...reducedArray));
-        console.log('Maximum: ', Math.max(...reducedArray));
+        // console.log(convertMillisToMinSec(duration) ,reducedArray)
+        // console.log('Minimum: ', Math.min(...reducedArray));
+        // console.log('Maximum: ', Math.max(...reducedArray));
         let jsxObject = [];
         let test = [];
         for (let i = 0; i < reducedArray.length; i++) {

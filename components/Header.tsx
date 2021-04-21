@@ -12,49 +12,68 @@ import 'firebase/firestore';
 
 const Header = (props: any) => {
     const { showProfilePicture, userId } = props;
-    const [currentUser, setCurrentUser] = useState<firebase.firestore.DocumentData | undefined>()
+    const [currentUser, setCurrentUser] = useState<firebase.firestore.DocumentData | undefined>();
+    const [profilePicture, setProfilePicture] = useState();
 
-    useEffect(() => {
-        getProfileData(userId);
-    })
-
-    const getProfileData = (userId: string) => {
-        firebase.firestore()
-        .collection('users')
-        .doc(userId).get()
-        .then((doc) => {
-            if (doc.exists) {
-                // console.log("Document data:", doc.data());
-                setCurrentUser(doc.data());
+    const checkIfLoggedIn = () => {
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                getProfileData(user.uid);
             }
-        }).catch((error) => {
-            console.log("Error getting document:", error);
-        });
+        })
     }
 
+
+    useEffect(() => {
+        checkIfLoggedIn()
+    }, []);
+
+    const getProfileData = async (user_id: string) => {
+        await firebase.firestore()
+        .collection('users')
+        .doc(user_id).get()
+        .then((doc) => {
+            setCurrentUser(doc.data());
+        }).catch((error) => {
+            console.error("Error getting profile data:", error);
+        });
+    }
 
     return (
         <View style={header.container}>
             <TouchableOpacity style={[header.menu]}
                 onPress={() => {
-                    
+
                 }}
             >
-                <Image
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: 50,
-                    }}
-                    source={currentUser ? {uri:currentUser?.profile_picture} : require('../assets/profile_empty.png') }
-                >
+                {
+                    showProfilePicture ?
 
-                </Image>
+                    <Image
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            borderRadius: 50,
+                        }}
+                        source={currentUser ? {uri: currentUser.profile_picture} : require('../assets/profile_empty.png')}
+                    >
+                    </Image> 
+
+                    : 
+
+                    <></>
+                }
+
             </TouchableOpacity>
 
             <Text style={{...header.logo}}>HUMMIT</Text>
 
-            <TouchableOpacity style={[header.search]}>
+            <TouchableOpacity 
+                style={[header.search]}
+                onPress={() => {
+                    
+                }}
+            >
                 <Svg style={{width: '90%', height: '90%'}} viewBox="0 0 25.067 25.054">
                     <G data-name="Search Icon" fill="none" stroke="#000" strokeWidth={3}>
                         <G data-name="Ellipse 1">
