@@ -11,7 +11,7 @@ import firebase from 'firebase';
 import 'firebase/firestore';
 
 const Header = (props: any) => {
-    const { showProfilePicture, userId } = props;
+    const { showProfilePicture, userId, isProfilePage } = props;
     const [currentUser, setCurrentUser] = useState<firebase.firestore.DocumentData | undefined>();
     const [profilePicture, setProfilePicture] = useState();
 
@@ -30,16 +30,25 @@ const Header = (props: any) => {
 
     const getProfileData = async (user_id: string) => {
         await firebase.firestore()
-        .collection('users')
-        .doc(user_id).get()
-        .then((doc) => {
-            setCurrentUser(doc.data());
-        }).catch((error) => {
-            console.error("Error getting profile data:", error);
-        });
+            .collection('users')
+            .doc(user_id).get()
+            .then((doc) => {
+                setCurrentUser(doc.data());
+            }).catch((error) => {
+                console.error("Error getting profile data:", error);
+            });
     }
 
     return (
+
+        isProfilePage ?
+
+        <View style={[header.container, {justifyContent: 'center'}]}>
+            <Text style={{...header.logo}}>{currentUser?.first_name} {currentUser?.last_name}</Text>
+        </View>
+
+        :
+
         <View style={header.container}>
             <TouchableOpacity style={[header.menu]}
                 onPress={() => {
@@ -71,7 +80,7 @@ const Header = (props: any) => {
             <TouchableOpacity 
                 style={[header.search]}
                 onPress={() => {
-                    
+
                 }}
             >
                 <Svg style={{width: '90%', height: '90%'}} viewBox="0 0 25.067 25.054">

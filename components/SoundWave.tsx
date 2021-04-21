@@ -85,7 +85,7 @@ const SoundWave = (props: any) => {
             let averageNumber = Math.floor(array.length / outputSize);
             
             for (let i = 0; i < outputSize; i++) {
-                let average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
+                let average = (arr: any) => arr.reduce((a: any, b: any) => a + b) / arr.length;
                 if (i == outputSize - 1) {
                     // reducedArray.push(Math.floor(average(array.slice(i, outputSize))))
                     reducedArray.push(Math.floor(Math.max(...array.slice(i, outputSize))))
