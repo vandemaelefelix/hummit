@@ -64,7 +64,8 @@ const Header = (props: any) => {
                             height: '100%',
                             borderRadius: 50,
                         }}
-                        source={currentUser ? {uri: currentUser.profile_picture} : require('../assets/profile_empty.png')}
+                        // source={currentUser ? {uri: currentUser.profile_picture} : require('../assets/profile_empty.png')}
+                        source={currentUser ? (currentUser.profile_picture ? {uri: currentUser.profile_picture} : require('../assets/profile_empty.png')) : require('../assets/profile_empty.png')}
                     >
                     </Image> 
 

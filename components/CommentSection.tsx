@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useImperativeHandle, forwardRef  } from 'react';
+import React, { useEffect, useState, useImperativeHandle, forwardRef, useRef  } from 'react';
 
 import { Text, TouchableOpacity, View, Image, Animated, Keyboard, FlatList, TextInput, Easing, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,13 +14,21 @@ import Comment from '../components/Comment';
 import { comments as commentsStyle} from '../styles/components/comments';
 import { theme } from '../styles/colors/theme';
 
+import LottieView from 'lottie-react-native';
+
 const { height, width } = Dimensions.get("window");
 
 const CommentSection = forwardRef((props: any, ref: any) => {
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
 
+    const [lottieAnimation, setLottieAnimation] = useState()
+    const animation = useRef(null);
+
     useEffect(() => {
         checkIfLoggedIn();
+        if (animation.current != null) {
+            animation.current.play()
+        }
     }, []);
 
     const checkIfLoggedIn = () => {
@@ -30,6 +38,8 @@ const CommentSection = forwardRef((props: any, ref: any) => {
             }
         })
     }
+
+
 
     const [comments, setComments] = useState<firebase.firestore.DocumentData[]>([]);
     const [commentSectionPostId, setCommentSectionPostId] = useState<string>();
@@ -192,7 +202,7 @@ const CommentSection = forwardRef((props: any, ref: any) => {
 
     const renderComment = (comment: any) => {
         return (
-            <Comment comment={comment} userId={comment.userId}></Comment>
+            <Comment isProfilePage={props.isProfilePage} comment={comment} userId={comment.userId}></Comment>
         )
     }
 
@@ -271,6 +281,20 @@ const CommentSection = forwardRef((props: any, ref: any) => {
 
         <Animated.View
                 style={[commentsStyle.commentSection, commentSectionAnimatedTransform]}
+                onTouchStart={(e) => {
+                    setOnTouchStartComments(e.nativeEvent.locationY);
+                }}
+                onTouchEnd={(e) => {
+                    console.log('OnTouchEnd: ', e.nativeEvent.locationY);
+                    if (commentsScrollLocation < 20) {
+                        if (onTouchStartComments) {
+                            if ((e.nativeEvent.locationY - onTouchStartComments) >= 30) {
+                                toggleCommentSection()
+                            }
+                        }
+                    }
+                }}
+                accessible={true}
             >
                 <TouchableOpacity
                     onPress={() => {
@@ -299,18 +323,60 @@ const CommentSection = forwardRef((props: any, ref: any) => {
                     </Svg>
                 </TouchableOpacity>
                 
-                <FlatList
+                {
+                    comments.length > 0 ?
+                    <FlatList
+                        data={comments} 
+                        renderItem={renderComment}
+                        keyExtractor={(comment): any => comment.id.toString()}
+                        style={[commentsStyle.container, ]}
+                        // onTouchStart={(e) => {
+                        //     setOnTouchStartComments(e.nativeEvent.locationY);
+                        // }}
+                        // onTouchEnd={(e) => {
+                        //     if (commentsScrollLocation < 20) {
+                        //         if (onTouchStartComments) {
+                        //             if ((e.nativeEvent.locationY - onTouchStartComments) >= 30) {
+                        //                 toggleCommentSection()
+                        //             }
+                        //         }
+                        //     }
+                        // }}
+
+                        contentContainerStyle={{
+                            paddingBottom: 150,
+                        }}
+                    >
+                    </FlatList>
+                    :
+                    <View style={[commentsStyle.noComments]}>
+                        <LottieView
+                            ref={animation.current}
+                            autoSize={true}
+                            style={{
+                                // width: '100%',
+                                // height: '100%',
+                                // backgroundColor: '#eee',
+                            }}
+                            // source={require('../assets/empty_comments_lottie.json')}
+                            source={require('../assets/empty_comments_lottie2.json')}
+                            // source={{uri: "https://assets1.lottiefiles.com/packages/lf20_MW06pA.json"}}
+                            autoPlay={true}
+                            // OR find more Lottie files @ https://lottiefiles.com/featured
+                            // Just click the one you like, place that file in the 'assets' folder to the left, and replace the above 'require' statement
+                        />
+                        <Text style={[commentsStyle.noCommentsText]}>Be the first to comment...</Text>
+                    </View>
+                }
+                {/* <FlatList
                     data={comments} 
                     renderItem={renderComment}
                     keyExtractor={(comment): any => comment.id.toString()}
                     style={[commentsStyle.container, ]}
                     onTouchStart={(e) => {
-                        // console.log('Touch start: ', e.nativeEvent.locationY)
                         setOnTouchStartComments(e.nativeEvent.locationY);
                     }}
                     onTouchEnd={(e) => {
-                        // console.log('Touch end: ', e.nativeEvent.locationY);
-                        // console.log('Comments scrolllocation: ', commentsScrollLocation);
                         if (commentsScrollLocation < 20) {
                             if (onTouchStartComments) {
                                 if ((e.nativeEvent.locationY - onTouchStartComments) >= 30) {
@@ -323,10 +389,8 @@ const CommentSection = forwardRef((props: any, ref: any) => {
                     contentContainerStyle={{
                         paddingBottom: 150,
                     }}
-
-                    
                 >
-                </FlatList>
+                </FlatList> */}
 
                 <View
                     style={[commentsStyle.commentInputContainer]}

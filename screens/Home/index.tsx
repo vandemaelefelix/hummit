@@ -306,6 +306,7 @@ const index = ({ navigation } : any) => {
                     position: 'absolute',
                     top: Constants.statusBarHeight,
                 }, loadingBarTransform.transform]}
+                accessibilityRole='progressbar'
             >
             </Animated.View> 
 

@@ -27,6 +27,7 @@ const HEADER_COLLAPSED_HEIGHT = 60
 const Profile = ({ navigation } : any) => {
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
     const [profileData, setProfileData] = useState<firebase.firestore.DocumentData | undefined>();
+    const [score, setScore] = useState<number>(0);
     const [data, setData] = useState<firebase.firestore.DocumentData[]>([]);
     const [isFetching, setIsFetching] = useState(false);
 
@@ -34,7 +35,7 @@ const Profile = ({ navigation } : any) => {
     
     useEffect(() => {
         checkIfLoggedIn();
-        getPosts();
+        // getPosts();
     }, []);
 
     const checkIfLoggedIn = () => {
@@ -42,6 +43,7 @@ const Profile = ({ navigation } : any) => {
             if (user) {
                 setCurrentUser(user);
                 getProfileData(user.uid);
+                getPosts(user.uid);
             } else {
                 firebase.auth().signOut()
                 navigation.navigate('Login', { error: 'not logged in' });
@@ -70,11 +72,26 @@ const Profile = ({ navigation } : any) => {
             }).catch((error) => {
                 console.error("Error getting profile data:", error);
             });
+
+        await firebase.firestore()
+            .collection('comments')
+            .where('user_id', '==', user_id).get()
+            .then((snapshot) => {
+                let scoreCount = 0;
+                snapshot.forEach((doc) => {
+                    if (doc.data().isCorrect) {
+                        scoreCount += 5;
+                    }
+                })
+                setScore(scoreCount);
+                console.log(scoreCount)
+            });
     }
 
-    const getPosts = async () => {
+    const getPosts = async (userId: string) => {
         if (!isFetching) setIsFetching(true);
-        await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('finished', '==', false)
+        await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('userId', '==', userId)
+        // await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('finished', '==', false)
             .get()
             .then((querySnapshot) => {
                 let newData: firebase.firestore.DocumentData[] = [];
@@ -129,7 +146,7 @@ const Profile = ({ navigation } : any) => {
         extrapolate: 'clamp'
     });
     const smallHeaderOpacity: Animated.AnimatedInterpolation = scrollY.interpolate({
-        inputRange: [250, HEADER_EXPANDED_HEIGHT-HEADER_COLLAPSED_HEIGHT],
+        inputRange: [HEADER_EXPANDED_HEIGHT / 1.5, HEADER_EXPANDED_HEIGHT],
         outputRange: [0, 1],
         extrapolate: 'clamp'
     }); 
@@ -137,15 +154,8 @@ const Profile = ({ navigation } : any) => {
 
     return (
         <SafeAreaView  style={{backgroundColor: theme[100]}}>
-            {/* <CommentSection ref={childRef}></CommentSection>
-            <TouchableOpacity
-            style={{zIndex: 200}}
-                onPress={() => childRef.current?.doSomething()}
-            >
-                <Text>Button</Text> 
-            </TouchableOpacity> */}
 
-            <CommentSection ref={childRef}></CommentSection>
+            <CommentSection isProfilePage={true} ref={childRef}></CommentSection>
 
             <Animated.View
                 style={[
@@ -171,7 +181,7 @@ const Profile = ({ navigation } : any) => {
 
                     <View style={[profile.profilePictureContainer]}>
                         <Image
-                            source={profileData ? {uri: profileData.profile_picture} : require('../../assets/profile_empty.png')}
+                            source={profileData ? (profileData.profile_picture ? {uri: profileData.profile_picture} : require('../../assets/profile_empty.png')) : require('../../assets/profile_empty.png')}
                             style={[profile.profilePicture]}
                         >
                         </Image>
@@ -198,11 +208,11 @@ const Profile = ({ navigation } : any) => {
 
                     <View style={[profile.info]}>
                         <View style={[profile.friends]}>
-                            <Text style={[profile.infoNumber]}>150</Text>
+                            <Text style={[profile.infoNumber]}>{profileData ? profileData.friends.length : 0}</Text>
                             <Text style={[profile.infoText]}>Friends</Text>
                         </View>
                         <View style={[profile.points]}>
-                            <Text style={[profile.infoNumber]}>390</Text>
+                            <Text style={[profile.infoNumber]}>{score}</Text>
                             <Text style={[profile.infoText]}>Points</Text>
                         </View>
                     </View>
@@ -225,7 +235,7 @@ const Profile = ({ navigation } : any) => {
                     },
                 ]}
             >
-                <Text style={[header.logo]}>Felix Vandemaele</Text>
+                <Text style={[header.logo]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}</Text>
             </Animated.View>
 
             <FlatList
@@ -259,152 +269,6 @@ const Profile = ({ navigation } : any) => {
 
                 showsVerticalScrollIndicator={false}
             />
-
-
-            {/* ---------- COMMENT SECTION ----------- */}
-            {/* <Animated.View
-                style={[commentsStyle.commentSection, commentSectionAnimatedTransform]}
-            >
-                <TouchableOpacity
-                    onPress={() => {
-                        Keyboard.dismiss();
-                        toggleCommentSection('hide');
-                    }}
-                    style={[commentsStyle.closeCommentsButton]}
-                >
-                    <Svg
-                        viewBox="0 0 21.213 21.213"
-                        style={{
-                            width: '30%',
-                            height: '30%',
-                        }}
-                    >
-                        <G
-                            data-name="Menu Icon Close"
-                            fill="none"
-                            stroke="#000"
-                            strokeLinecap="round"
-                            strokeWidth={3}
-                        >
-                            <Path data-name="Line 3" d="M19.092 2.122l-16.97 16.97" />
-                            <Path data-name="Line 5" d="M2.122 2.122l16.97 16.97" />
-                        </G>
-                    </Svg>
-                </TouchableOpacity>
-                
-                <FlatList
-                    data={comments} 
-                    renderItem={renderComment}
-                    keyExtractor={(comment): any => comment.id.toString()}
-                    style={[commentsStyle.container, ]}
-                    onTouchStart={(e) => {
-                        console.log('Touch start: ', e.nativeEvent.locationY)
-                        setOnTouchStartComments(e.nativeEvent.locationY);
-                    }}
-                    onTouchEnd={(e) => {
-                        console.log('Touch end: ', e.nativeEvent.locationY);
-                        console.log('Comments scrolllocation: ', commentsScrollLocation);
-                        if (commentsScrollLocation < 20) {
-                            if (onTouchStartComments) {
-                                if ((e.nativeEvent.locationY - onTouchStartComments) >= 30) {
-                                    toggleCommentSection()
-                                }
-                            }
-                        }
-                    }}
-
-                    contentContainerStyle={{
-                        paddingBottom: 150,
-                    }}
-
-                    
-                >
-                </FlatList>
-
-                <View
-                    style={[commentsStyle.commentInputContainer]}
-                >   
-
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            width: '90%',
-                        }}
-                    >
-                        <TextInput
-                            placeholder="Write a comment..."
-                            onChangeText={(value) => {
-                                if (value && value != '') {
-                                    animateColors(true);
-                                } else {
-                                    animateColors(false);
-                                }
-                                setCommentInputValue(value)
-                            }}
-                            value={commentInputValue}
-                            multiline={true}
-                            maxLength={100}
-                            style={[commentsStyle.commentInputField]}
-                        >
-                        </TextInput>
-
-                        <TouchableOpacity
-                            onPress={() => {
-                                if (commentInputValue && commentInputValue != '') {
-                                    saveComment(commentInputValue, commentSectionPostId ? commentSectionPostId : '');
-                                    animateSendButton('success');
-                                } else {
-                                    animateSendButton('error');
-                                    console.log('Please fill in a comment!')
-                                }
-                            }}
-                            style={[commentsStyle.sendCommentButton]}
-                        >
-                            <Animated.View
-                                style={[{
-                                    width: '100%',
-                                    height: '100%',
-                                    borderRadius: 50,
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    overflow: 'hidden',
-                                }, sendButtonAnimatedColorValue]}
-                            >
-                                <Animated.View
-                                    style={[{
-                                        width: '100%',
-                                        height: '100%',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                    }, sendButtonAnimatedTransformValue]}
-                                >    
-                                    {
-                                        commentInputValue ? 
-                                            <Svg style={{width: '50%', height: '50%'}} viewBox="0 0 512 441.779">
-                                                <Path 
-                                                    fill={theme.comments}
-                                                    data-name="Path 20"
-                                                    d="M481.508 175.224L68.414 3.815A49.442 49.442 0 001.557 61.697l40.594 159.192L1.557 380.081a49.441 49.441 0 0066.857 57.882l413.094-171.409a49.44 49.44 0 000-91.33zm-11.5 63.62L56.916 410.253a19.441 19.441 0 01-26.288-22.764l38.659-151.6h417.722c8.285 0 15.788-6.715 15.788-15s-7.5-15-15.788-15H69.288l-38.66-151.6a19.44 19.44 0 0126.287-22.76l413.094 171.405a19.439 19.439 0 010 35.91z"
-                                                />
-                                            </Svg>
-                                        : 
-                                            <Svg style={{width: '50%', height: '50%'}} viewBox="0 0 512 441.779">
-                                                <Path 
-                                                    fill={'#B7B7B7'}
-                                                    data-name="Path 20"
-                                                    d="M481.508 175.224L68.414 3.815A49.442 49.442 0 001.557 61.697l40.594 159.192L1.557 380.081a49.441 49.441 0 0066.857 57.882l413.094-171.409a49.44 49.44 0 000-91.33zm-11.5 63.62L56.916 410.253a19.441 19.441 0 01-26.288-22.764l38.659-151.6h417.722c8.285 0 15.788-6.715 15.788-15s-7.5-15-15.788-15H69.288l-38.66-151.6a19.44 19.44 0 0126.287-22.76l413.094 171.405a19.439 19.439 0 010 35.91z"
-                                                />
-                                            </Svg>
-                                    }
-                                </Animated.View>
-                            </Animated.View>
-                        </TouchableOpacity>
-                    </View>
-
-                </View>
-            </Animated.View> */}
 
         </SafeAreaView>
     )

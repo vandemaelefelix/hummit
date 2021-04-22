@@ -10,11 +10,15 @@ import 'firebase/firestore';
 import 'firebase/database';
 import Svg, { G, Path } from 'react-native-svg';
 
+import * as Haptics from 'expo-haptics';
+
 import { comments } from '../styles/components/comments';
 import { theme } from '../styles/colors/theme';
 
 const Comment = (props: any) => {
     const [profileData, setProfileData] = useState<firebase.firestore.DocumentData | undefined>();
+    const [isCorrect, setIsCorrect] = useState<boolean>(props.comment.item.isCorrect);
+    const [canChange, setCanChange] = useState<boolean>(false);
 
     const getProfileData = () => {
 
@@ -68,15 +72,36 @@ const Comment = (props: any) => {
         }
     }
 
+    const updateIsCorrect = async (commentId: string, isCorrect: boolean) => {
+        console.log(commentId);
+        await firebase.firestore().collection('comments')
+        .doc(commentId)
+        .update({
+            isCorrect: isCorrect
+        })
+    }
+
+    const toggleIsCorrect = async () => {
+        updateIsCorrect(props.comment.item.id, !isCorrect)
+        setIsCorrect(!isCorrect);
+    }
+
     return (
         <View style={[comments.commentContainer]}>
             <Image
                 style={[comments.commentProfilePic]}
                 source={profileData?.profile_picture ? {uri: profileData.profile_picture} : require('../assets/icon.png')}
             />
-            <TouchableWithoutFeedback 
-                onPress={() => {console.log('correct')}}
+            <TouchableOpacity
+                onLongPress={() => {
+                    if (props.isProfilePage) {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        toggleIsCorrect();
+                    }
+                }}
+                delayLongPress={150}
                 style={[comments.commentTextContainer]}
+                activeOpacity={1}
             >
                 <View
                     style={{
@@ -113,7 +138,7 @@ const Comment = (props: any) => {
 
 
                 {
-                    props.comment.item.isCorrect ?
+                    isCorrect ?
                     <View 
                         style={{
                             position: 'absolute',
@@ -123,7 +148,7 @@ const Comment = (props: any) => {
                             top: 8,
                             right: 8,
                             borderRadius: 8,
-                            padding: 6
+                            padding: 6,
                         }}
                     >
                         <Svg style={{width: '100%', height: '100%', }} viewBox="0 0 19.585 15.208">
@@ -135,31 +160,13 @@ const Comment = (props: any) => {
                         </Svg>
                     </View>
                     : 
-                    <TouchableOpacity 
-                        style={{
-                            position: 'absolute',
-                            backgroundColor: theme.checkmark,
-                            width: 24,
-                            height: 24,
-                            top: 8,
-                            right: 8,
-                            borderRadius: 8,
-                            padding: 6
-                        }}
-                    >
-                        <Svg style={{width: '100%', height: '100%', }} viewBox="0 0 19.585 15.208">
-                            <Path
-                                fill="white"
-                                data-name="Path 19"
-                                d="M7.499 14.915a1 1 0 01-1.414 0L.439 9.268a1.5 1.5 0 010-2.121l.707-.707a1.5 1.5 0 012.121 0l3.525 3.525L16.317.44a1.5 1.5 0 012.121 0l.707.707a1.5 1.5 0 010 2.121z"
-                            />
-                        </Svg>
-                    </TouchableOpacity>
+                    <></>
                 }
-            </TouchableWithoutFeedback>
+            </TouchableOpacity>
 
         </View>
     )
 }
 
 export default Comment;
+

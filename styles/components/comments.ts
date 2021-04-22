@@ -9,6 +9,15 @@ export const comments = StyleSheet.create({
         marginTop: 46 + 60,
         width: '100%',
     },
+    noComments: {
+        marginTop: 46 + 60,
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    noCommentsText: {
+        fontSize: 16,
+    },
     commentContainer: {
         flexDirection: 'row',
         justifyContent: 'space-evenly',
