@@ -11,22 +11,37 @@ import 'firebase/database';
 import Svg, { G, Path } from 'react-native-svg';
 
 import * as Haptics from 'expo-haptics';
+import { useNavigation } from '@react-navigation/native';
 
 import { comments } from '../styles/components/comments';
 import { theme } from '../styles/colors/theme';
 
 const Comment = (props: any) => {
+    const navigation = useNavigation();
     const [profileData, setProfileData] = useState<firebase.firestore.DocumentData | undefined>();
     const [isCorrect, setIsCorrect] = useState<boolean>(props.comment.item.isCorrect);
     const [canChange, setCanChange] = useState<boolean>(false);
+    const [currentUser, setCurrentUser] = useState<firebase.User | null>();
+
+    const checkIfLoggedIn = () => {
+        firebase.auth().onAuthStateChanged((user: firebase.User | null) => {
+            if (user) {
+                setCurrentUser(user);
+                getProfileData();
+            } else {
+                firebase.auth().signOut()
+                navigation.navigate('Login', { error: 'not logged in' });
+            }
+        })
+    }
 
     const getProfileData = () => {
-
-        firebase.firestore().collection('users').doc('UjrAxRr8FoYIdkH2TzlvZx1sQd13')
+        firebase.firestore().collection('users').doc(props.comment.item.user_id)
             .get()
             .then((doc) => {
                 if (doc.exists) {
                     setProfileData(doc.data());
+                    console.log(doc.data())
                 }
             }).catch((error) => {
                 console.log("Error getting document:", error);
@@ -34,7 +49,7 @@ const Comment = (props: any) => {
     }
 
     useEffect(() => {
-        getProfileData()
+        checkIfLoggedIn();
     }, [])
 
     const calcTime = (current: Date, previous: Date) => {
@@ -88,10 +103,22 @@ const Comment = (props: any) => {
 
     return (
         <View style={[comments.commentContainer]}>
-            <Image
-                style={[comments.commentProfilePic]}
-                source={profileData?.profile_picture ? {uri: profileData.profile_picture} : require('../assets/icon.png')}
-            />
+            <TouchableOpacity
+                onPress={() => {
+                    if (currentUser) {
+                        if (currentUser.uid === props.comment.item.user_id) {
+                            navigation.navigate('Profile');
+                        } else {
+                            // TODO: Navigate to profile of other person with ID: props.postId
+                        }
+                    }
+                }}
+            >
+                <Image
+                    style={[comments.commentProfilePic]}
+                    source={profileData?.profile_picture ? {uri: profileData.profile_picture} : require('../assets/icon.png')}
+                />
+            </TouchableOpacity>
             <TouchableOpacity
                 onLongPress={() => {
                     if (props.isProfilePage) {
@@ -109,10 +136,22 @@ const Comment = (props: any) => {
                         alignItems: 'center',
                         paddingBottom: 4
                     }}
-                >
-                    <Text style={[comments.commentName]}>
-                        {profileData ? `${profileData.first_name} ${profileData.last_name}` : ''}
-                    </Text>
+                >   
+                    <TouchableOpacity
+                        onPress={() => {
+                            if (currentUser) {
+                                if (currentUser.uid === props.comment.item.user_id) {
+                                    navigation.navigate('Profile');
+                                } else {
+                                    // TODO: Navigate to profile of other person with ID: props.postId
+                                }
+                            }
+                        }}
+                    >
+                        <Text style={[comments.commentName]}>
+                            {profileData ? `${profileData.first_name} ${profileData.last_name}` : ''}
+                        </Text>
+                    </TouchableOpacity>
                     <View style={{
                         width: 5,
                         height: 5,

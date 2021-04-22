@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import { FlatList, TouchableOpacity, View, RefreshControl, Animated, Dimensions, Easing, Keyboard, TextInput, Modal } from 'react-native';
+import { FlatList, TouchableOpacity, View, RefreshControl, Animated, Dimensions, Easing, Keyboard, TextInput, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { G, Path } from 'react-native-svg';
 
@@ -39,6 +39,21 @@ const Home = ({ navigation } : any) => {
     const renderPost = ({item}: any) => {
         return (
             <Post postData={item} showComments={showCommentSection} ></Post>
+        )
+    }
+
+    const renderEmptyPost = () => {
+        return (
+            <View
+                style={{
+                    width: '100%',
+                    paddingVertical: 16,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}
+            >
+                <Text>Please post something 🙁</Text>
+            </View>
         )
     }
     
@@ -87,12 +102,12 @@ const Home = ({ navigation } : any) => {
 
     const getPosts = async () => {
         if (!isFetching) setIsFetching(true);
+        // await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('userId', '==', 'hKEq7DGbrYRTkkipI4dQaXvfU6z2')
         await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('finished', '==', false)
             .get()
             .then((querySnapshot) => {
                 let newData: firebase.firestore.DocumentData[] = [];
-                querySnapshot.forEach((doc) => {
-                    //@ts-ignore
+                querySnapshot.forEach((doc: firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>) => {
                     let data = doc.data();
                     data['id'] = doc.id;
                     newData.push(data);
@@ -113,7 +128,7 @@ const Home = ({ navigation } : any) => {
 
             <Header showProfilePicture={true} userId={currentUser?.uid}/>
             <FlatList
-                contentContainerStyle={{ paddingBottom: 100, minHeight: '90%' , paddingTop: 8}}
+                contentContainerStyle={{ paddingBottom: 100, minHeight: height / 10 * 9 , paddingTop: 8}}
                 data={data} 
                 renderItem={renderPost}
                 keyExtractor={(post): any => post.id.toString()}
@@ -126,6 +141,8 @@ const Home = ({ navigation } : any) => {
                         titleColor="#474574"
                     />
                 }
+
+                ListEmptyComponent={renderEmptyPost}
             />
 
             <CommentSection ref={childRef} ></CommentSection>

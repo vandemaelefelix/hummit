@@ -10,6 +10,8 @@ import 'firebase/firestore';
 import 'firebase/database';
 import Svg, { G, Path } from 'react-native-svg';
 
+import { useNavigation } from '@react-navigation/native';
+
 type Profile = {
     created_at: number;
     email: string;
@@ -20,8 +22,22 @@ type Profile = {
 };
 
 const Post = (props: any) => {
+    const navigation = useNavigation();
     const {postData, showComments} = props;
     const [profileData, setProfileData] = useState<firebase.firestore.DocumentData | Profile | null>();
+    const [currentUser, setCurrentUser] = useState<firebase.User | null>();
+
+
+    const checkIfLoggedIn = () => {
+        firebase.auth().onAuthStateChanged((user: firebase.User | null) => {
+            if (user) {
+                setCurrentUser(user);
+            } else {
+                firebase.auth().signOut()
+                navigation.navigate('Login', { error: 'not logged in' });
+            }
+        })
+    }
 
     const getProfileData = () => {
 
@@ -29,7 +45,6 @@ const Post = (props: any) => {
             .get()
             .then((doc) => {
                 if (doc.exists) {
-                    // console.log("Document data:", doc.data());
                     setProfileData(doc.data());
                 }
             }).catch((error) => {
@@ -38,7 +53,8 @@ const Post = (props: any) => {
     }
 
     useEffect(() => {
-        getProfileData()
+        getProfileData();
+        checkIfLoggedIn();
     }, [])
 
     const calcTime = (current: Date, previous: Date) => {
@@ -78,13 +94,26 @@ const Post = (props: any) => {
 
     return (
         <View style={[post.container ]} key={postData.id.toString()}>
-            <View style={[post.titleBox]}>
+            <TouchableOpacity 
+                style={[post.titleBox]}
+                onPress={() => {
+                    if (currentUser && currentUser.uid) {
+                        if (currentUser.uid === postData.userId) {
+                            console.log('Post of logged in user')
+                            navigation.navigate('Profile');
+                        } else {
+                            // TODO: Navigate to Profile of other user with ID: postData.userId
+                        }
+                    }
+                }}
+                activeOpacity={1}
+            >
                 <Image style={[post.profilePic]} source={profileData?.profile_picture ? {uri: profileData.profile_picture} : require('../assets/profile_empty.png')} />
                 <View style={{ marginLeft: 16,}}>
                     <Text style={[post.name]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}</Text>
                     <Text>{calcTime(new Date(Date.now()), postData.created_at)}</Text>
                 </View>
-            </View>
+            </TouchableOpacity>
             <Text style={[post.description]}>{postData.description}</Text>
 
             <SoundWave postId={1} memo={postData.recording} duration={postData.recordingDuration} metering={postData.metering}></SoundWave>

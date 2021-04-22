@@ -8,7 +8,7 @@ export const profile = StyleSheet.create({
     header: {
         width: '100%',
         alignItems: 'center',
-        zIndex: 20,
+        zIndex: 10,
         position: 'absolute', 
         top: 0, 
         left: 0,
@@ -39,8 +39,7 @@ export const profile = StyleSheet.create({
         height: '45%',
         aspectRatio: 1,
         marginTop: '5%',
-        // backgroundColor: 'orange',
-        // zIndex: 10,
+        zIndex: 100,
     },
     profilePicture: {
         width: '100%',
@@ -56,7 +55,7 @@ export const profile = StyleSheet.create({
         bottom: '5%',
         right: '5%',
         backgroundColor: theme[800],
-        zIndex: 20,
+        // zIndex: 100,
         alignItems: 'center',
         justifyContent: 'center',
     },

@@ -10,7 +10,10 @@ import { header } from '../styles/components/header';
 import firebase from 'firebase';
 import 'firebase/firestore';
 
+import { useNavigation } from '@react-navigation/native';
+
 const Header = (props: any) => {
+    const navigation = useNavigation();
     const { showProfilePicture, userId, isProfilePage } = props;
     const [currentUser, setCurrentUser] = useState<firebase.firestore.DocumentData | undefined>();
     const [profilePicture, setProfilePicture] = useState();
@@ -52,7 +55,7 @@ const Header = (props: any) => {
         <View style={header.container}>
             <TouchableOpacity style={[header.menu]}
                 onPress={() => {
-
+                    navigation.navigate('Profile');
                 }}
             >
                 {

@@ -14,27 +14,22 @@ import Comment from '../components/Comment';
 import { comments as commentsStyle} from '../styles/components/comments';
 import { theme } from '../styles/colors/theme';
 
-import LottieView from 'lottie-react-native';
-
 const { height, width } = Dimensions.get("window");
 
 const CommentSection = forwardRef((props: any, ref: any) => {
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
 
-    const [lottieAnimation, setLottieAnimation] = useState()
-    const animation = useRef(null);
-
     useEffect(() => {
         checkIfLoggedIn();
-        if (animation.current != null) {
-            animation.current.play()
-        }
     }, []);
 
     const checkIfLoggedIn = () => {
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
                 setCurrentUser(user);
+            } else {
+                firebase.auth().signOut();
+                // TODO: Navigate to Sign in page
             }
         })
     }
@@ -78,8 +73,7 @@ const CommentSection = forwardRef((props: any, ref: any) => {
 
     useImperativeHandle(ref, () => ({
         openCommentSection(post_id: string) {
-            let postId = 'luqb2bFniTd9WISUVCTl';
-            console.log('Het werkt');
+            // console.log('Het werkt');
             setCommentSectionPostId(post_id);
             toggleCommentSection('hide');
             getComments(post_id);
@@ -330,18 +324,6 @@ const CommentSection = forwardRef((props: any, ref: any) => {
                         renderItem={renderComment}
                         keyExtractor={(comment): any => comment.id.toString()}
                         style={[commentsStyle.container, ]}
-                        // onTouchStart={(e) => {
-                        //     setOnTouchStartComments(e.nativeEvent.locationY);
-                        // }}
-                        // onTouchEnd={(e) => {
-                        //     if (commentsScrollLocation < 20) {
-                        //         if (onTouchStartComments) {
-                        //             if ((e.nativeEvent.locationY - onTouchStartComments) >= 30) {
-                        //                 toggleCommentSection()
-                        //             }
-                        //         }
-                        //     }
-                        // }}
 
                         contentContainerStyle={{
                             paddingBottom: 150,
@@ -350,21 +332,6 @@ const CommentSection = forwardRef((props: any, ref: any) => {
                     </FlatList>
                     :
                     <View style={[commentsStyle.noComments]}>
-                        <LottieView
-                            ref={animation.current}
-                            autoSize={true}
-                            style={{
-                                // width: '100%',
-                                // height: '100%',
-                                // backgroundColor: '#eee',
-                            }}
-                            // source={require('../assets/empty_comments_lottie.json')}
-                            source={require('../assets/empty_comments_lottie2.json')}
-                            // source={{uri: "https://assets1.lottiefiles.com/packages/lf20_MW06pA.json"}}
-                            autoPlay={true}
-                            // OR find more Lottie files @ https://lottiefiles.com/featured
-                            // Just click the one you like, place that file in the 'assets' folder to the left, and replace the above 'require' statement
-                        />
                         <Text style={[commentsStyle.noCommentsText]}>Be the first to comment...</Text>
                     </View>
                 }

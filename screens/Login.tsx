@@ -18,6 +18,18 @@ import { firebaseConfig } from '../config';
 const { height, width } = Dimensions.get("window");
 
 const Login = ({ navigation } : any) => {
+    const checkIfLoggedIn = () => {
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                navigation.navigate('Home');
+            }
+        })
+    }
+
+    useEffect(() => {
+        checkIfLoggedIn();
+    }, []);
+
     // ----- State popup forms -----
     const signInFormHeight = height / 10 * 4 + 30;
     const signUpFormHeight = height / 10 * 6 + 30;
@@ -308,7 +320,12 @@ const Login = ({ navigation } : any) => {
                         friends: [],
                     })
                     .then((snapshot: any) => {
-                        console.info('User written to database')
+                        console.info('User written to database');
+                        setSignUpFormEmail('');
+                        setSignUpFormFirstName(''),
+                        setSignUpFormName('');
+                        setSignUpFormPassword('');
+                        toggleSignUpForm();
                         navigation.navigate('Home');
                     })
 
@@ -340,6 +357,9 @@ const Login = ({ navigation } : any) => {
                     .update({
                         last_logged_in: Date.now(),
                     });
+                setSignInFormEmail('');
+                setSignInFormPassword('');
+                toggleSignInForm();
                 navigation.navigate('Home');
             })
             .catch((error) => {
