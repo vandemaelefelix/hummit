@@ -102,7 +102,6 @@ const Home = ({ navigation } : any) => {
 
     const getPosts = async () => {
         if (!isFetching) setIsFetching(true);
-        // await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('userId', '==', 'hKEq7DGbrYRTkkipI4dQaXvfU6z2')
         await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('finished', '==', false)
             .get()
             .then((querySnapshot) => {

@@ -19,6 +19,7 @@ if (!firebase.apps.length) {
 
 import Login from './screens/Login';
 import Register from './screens/Register';
+import OtherProfile from './screens/OtherProfile';
 import Loading from './screens/Loading';
 import index from './screens/Home/index';
 
@@ -34,8 +35,9 @@ export default function App( {navigation}: any ) {
 				>
 					<Stack.Screen component={index} name='Home'></Stack.Screen>
 					<Stack.Screen component={Login} name='Login'></Stack.Screen>
-					<Stack.Screen component={Register} name='Register'></Stack.Screen>
-					<Stack.Screen component={Loading} name='Loading'></Stack.Screen>
+					<Stack.Screen component={OtherProfile} name='OtherProfile'></Stack.Screen>
+					{/* <Stack.Screen component={Register} name='Register'></Stack.Screen>
+					<Stack.Screen component={Loading} name='Loading'></Stack.Screen> */}
 				</Stack.Navigator>
 			</NavigationContainer>
 		</SafeAreaProvider>

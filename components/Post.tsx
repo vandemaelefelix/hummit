@@ -10,7 +10,8 @@ import 'firebase/firestore';
 import 'firebase/database';
 import Svg, { G, Path } from 'react-native-svg';
 
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { profile } from '../styles/components/profile';
 
 type Profile = {
     created_at: number;
@@ -19,10 +20,13 @@ type Profile = {
     last_name: string;
     locale: string;
     profile_picture: string;
+    display_name: string;
 };
 
 const Post = (props: any) => {
     const navigation = useNavigation();
+    const route = useRoute().name;
+    // console.log(route)
     const {postData, showComments} = props;
     const [profileData, setProfileData] = useState<firebase.firestore.DocumentData | Profile | null>();
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
@@ -103,6 +107,7 @@ const Post = (props: any) => {
                             navigation.navigate('Profile');
                         } else {
                             // TODO: Navigate to Profile of other user with ID: postData.userId
+                            navigation.navigate('OtherProfile', {userId: postData.userId});
                         }
                     }
                 }}
@@ -110,11 +115,30 @@ const Post = (props: any) => {
             >
                 <Image style={[post.profilePic]} source={profileData?.profile_picture ? {uri: profileData.profile_picture} : require('../assets/profile_empty.png')} />
                 <View style={{ marginLeft: 16,}}>
-                    <Text style={[post.name]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}</Text>
+
+                    {
+                        // route != 'Profile' ?
+                        postData.userId != currentUser?.uid ?
+                            profileData ? 
+                                profileData.display_name != undefined ?
+                                <Text style={[post.name]}>{profileData ? profileData.display_name : 'Anonymous'}</Text>
+                                :
+                                <Text style={[post.name]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}</Text>
+                            :
+                            <Text style={[post.name]}>Anonymous</Text>
+                        :
+                        <Text style={[post.name]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}</Text>
+                    }
+
                     <Text>{calcTime(new Date(Date.now()), postData.created_at)}</Text>
                 </View>
             </TouchableOpacity>
-            <Text style={[post.description]}>{postData.description}</Text>
+            {
+                postData.description != '' ?
+                    <Text style={[post.description]}>{postData.description}</Text>
+                :
+                <></>
+            }
 
             <SoundWave postId={1} memo={postData.recording} duration={postData.recordingDuration} metering={postData.metering}></SoundWave>
 

@@ -26,10 +26,11 @@ const { height, width } = Dimensions.get("window");
 
 // const HEADER_EXPANDED_HEIGHT = 400;
 const HEADER_EXPANDED_HEIGHT = height / 10 * 4;
-const HEADER_COLLAPSED_HEIGHT = 60
+const HEADER_COLLAPSED_HEIGHT = 60;
 
 import * as ImagePicker from 'expo-image-picker';
 import { openPicker } from 'react-native-image-crop-picker';
+import { tabNavBar } from '../../styles/components/tabNavBar';
 
 const Profile = ({ navigation } : any) => {
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
@@ -39,10 +40,76 @@ const Profile = ({ navigation } : any) => {
     const [isFetching, setIsFetching] = useState(false);
     const [isRefresh, setIsRefresh] = useState(false);
 
+    // ----- State for image picker popup -----
+    const [isImagePickerPopUpOpen, setIsImagePickerPopUpOpen] = useState(false)
+    const [imagePickerPopUpAnimationScale, setImagePickerPopUpAnimationScale] = useState(new Animated.Value(0.6));
+    const [imagePickerPopUpAnimationOpacity, setImagePickerPopUpAnimationOpacity] = useState(new Animated.Value(0));
+    const imagePickerPopUpAnimatedValues = {
+        transform: [{scale: imagePickerPopUpAnimationScale }],
+        opacity: imagePickerPopUpAnimationOpacity,
+    }
+    const imagePickerBackgroundAnimatedValue = {
+        opacity: imagePickerPopUpAnimationOpacity,
+    }
+
+    // ----- State for option menu popup
+    const [isOptionMenuPopUpOpen, setIsOptionMenuPopUpOpen] = useState(false)
+    const [optionMenuPopUpAnimationScale, setOptionMenuPopUpAnimationScale] = useState(new Animated.Value(0.6));
+    const [optionMenuPopUpAnimationOpacity, setOptionMenuPopUpAnimationOpacity] = useState(new Animated.Value(0));
+    const optionMenuPopUpAnimatedValues = {
+        transform: [{scale: optionMenuPopUpAnimationScale }],
+        opacity: optionMenuPopUpAnimationOpacity,
+    }
+
+    // ! ========== Scroll Animation ==========
+    const [scrollY, setScrollY] = useState<Animated.Value>(new Animated.Value(0));
+
+    const headerHeight: Animated.AnimatedInterpolation = scrollY.interpolate({
+        inputRange: [0, HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT],
+        outputRange: [HEADER_EXPANDED_HEIGHT, HEADER_COLLAPSED_HEIGHT],
+        extrapolate: 'clamp',
+    });
+    const headerContentTranslate: Animated.AnimatedInterpolation = scrollY.interpolate({
+        inputRange: [0, (HEADER_EXPANDED_HEIGHT-HEADER_COLLAPSED_HEIGHT)],
+        outputRange: [0, -200],
+        extrapolate: 'clamp'
+    });
+    const headerBackgroundTranslate: Animated.AnimatedInterpolation = scrollY.interpolate({
+        inputRange: [0, (HEADER_EXPANDED_HEIGHT)],
+        outputRange: [0, -100],
+        extrapolate: 'clamp'
+    });
+    const headerContentOpacity: Animated.AnimatedInterpolation = scrollY.interpolate({
+        inputRange: [0, HEADER_EXPANDED_HEIGHT-HEADER_COLLAPSED_HEIGHT],
+        outputRange: [1, 0],
+        extrapolate: 'clamp'
+    });
+    const smallHeaderOpacity: Animated.AnimatedInterpolation = scrollY.interpolate({
+        inputRange: [HEADER_EXPANDED_HEIGHT / 1.5, HEADER_EXPANDED_HEIGHT],
+        outputRange: [0, 1],
+        extrapolate: 'clamp'
+    });
+
+    const test = () => {
+        firebase.firestore().collection('users').doc('39jQYg2F1rO9RKIGlltdTiZyDHz2')
+        .onSnapshot((doc) => {
+            if (doc.exists) {
+                console.log(doc.data());
+            }
+        })
+    }
     
     useEffect(() => {
         checkIfLoggedIn();
-        // getPosts();
+        test();
+        (async () => {
+            if (Platform.OS !== 'web') {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                alert('Sorry, we need camera roll permissions to make this work!');
+            }
+            }
+        })();
     }, []);
 
     const checkIfLoggedIn = () => {
@@ -84,9 +151,18 @@ const Profile = ({ navigation } : any) => {
     const getProfileData = async (user_id: string) => {
         await firebase.firestore()
             .collection('users')
-            .doc(user_id).get()
+            .doc(user_id)
+            .get()
             .then((doc: firebase.firestore.DocumentSnapshot<firebase.firestore.DocumentData>) => {
-                setProfileData(doc.data());
+                if (doc && doc != undefined) {
+                    setProfileData(doc.data());
+                    if (doc.data()?.display_name) {
+                        setChangeNameInputValue(doc.data()?.display_name);
+                    } else {
+                        setChangeNameInputValue(`${doc.data()?.first_name} ${doc.data()?.last_name}`);
+                    }
+                }
+
             }).catch((error) => {
                 console.error("Error getting profile data:", error);
             });
@@ -134,20 +210,6 @@ const Profile = ({ navigation } : any) => {
 
 
     // ! ========== Image Picker With Crop Function ==========
-
-    const [image, setImage] = useState<string | null>(null);
-    const [displayImagePopUp, setDisplayImagePopUp] = useState(false);
-
-    useEffect(() => {
-        (async () => {
-            if (Platform.OS !== 'web') {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== 'granted') {
-                alert('Sorry, we need camera roll permissions to make this work!');
-            }
-            }
-        })();
-    }, []);
     
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -208,19 +270,21 @@ const Profile = ({ navigation } : any) => {
         }
     }
 
-    const [isImagePickerPopUpOpen, setIsImagePickerPopUpOpen] = useState(false)
-    const [imagePickerPopUpAnimationScale, setImagePickerPopUpAnimationScale] = useState(new Animated.Value(0.6));
-    const [imagePickerPopUpAnimationOpacity, setImagePickerPopUpAnimationOpacity] = useState(new Animated.Value(0));
-    const imagePickerPopUpAnimatedValues = {
-        transform: [{scale: imagePickerPopUpAnimationScale }],
-        opacity: imagePickerPopUpAnimationOpacity,
-    }
-    const imagePickerBackgroundAnimatedValue = {
-        opacity: imagePickerPopUpAnimationOpacity,
-    }
+    const updateDisplayName = async (name: string, user_id: string) => {
+        console.log('Updating name with: ', name);
 
+        firebase.firestore().collection('users')
+        .doc(user_id)
+        .update({
+            diplay_name: name
+        });
+
+    }
 
     const toggleImagePickerPopUp = () => {
+        if (isOptionMenuPopUpOpen) {
+            toggleOptionMenuPopUp();
+        }
         
         Animated.timing(imagePickerPopUpAnimationScale, {
             toValue: isImagePickerPopUpOpen ? 0.6 : 1,
@@ -239,21 +303,10 @@ const Profile = ({ navigation } : any) => {
         if (!isImagePickerPopUpOpen) setIsImagePickerPopUpOpen(true);
     }
 
-    // TODO: ========== Options menu ==========
-
-    const [isOptionMenuPopUpOpen, setIsOptionMenuPopUpOpen] = useState(false)
-    const [optionMenuPopUpAnimationScale, setOptionMenuPopUpAnimationScale] = useState(new Animated.Value(0.6));
-    const [optionMenuPopUpAnimationOpacity, setOptionMenuPopUpAnimationOpacity] = useState(new Animated.Value(0));
-    const optionMenuPopUpAnimatedValues = {
-        transform: [{scale: optionMenuPopUpAnimationScale }],
-        opacity: optionMenuPopUpAnimationOpacity,
-    }
-    const optionMenuBackgroundAnimatedValue = {
-        opacity: optionMenuPopUpAnimationOpacity,
-    }
-
-
     const toggleOptionMenuPopUp = () => {
+        if (isImagePickerPopUpOpen) {
+            toggleImagePickerPopUp()
+        }
         
         Animated.timing(optionMenuPopUpAnimationScale, {
             toValue: isOptionMenuPopUpOpen ? 0.6 : 1,
@@ -261,6 +314,14 @@ const Profile = ({ navigation } : any) => {
             useNativeDriver: true,
             easing: isOptionMenuPopUpOpen ? Easing.out(Easing.ease) : Easing.in(Easing.elastic(1)),
         }).start();
+        
+        Animated.timing(imagePickerPopUpAnimationOpacity, {
+            toValue: isOptionMenuPopUpOpen ? 0 : 1,
+            duration: 250,
+            useNativeDriver: true,
+            easing: Easing.linear,
+        }).start();
+
         Animated.timing(optionMenuPopUpAnimationOpacity, {
             toValue: isOptionMenuPopUpOpen ? 0 : 1,
             duration: 250,
@@ -273,38 +334,42 @@ const Profile = ({ navigation } : any) => {
     }
 
 
+    // TODO: ========== Change Name ==========
+    // State for form animation
+    const formHeight = height / 10 * 4 + 30;
+    const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
+    const [formAnimation, setFormAnimation] = useState({
+        positionY: new Animated.Value(isFormOpen ? 0 : formHeight)
+    });
+    const animatedTransform = {
+        transform: [{translateY: formAnimation.positionY}],
+    }
+
+    const [changeNameInputValue, setChangeNameInputValue] = useState('');
+    
+
+    const toggleForm = () => {
+        setIsFormOpen((state: boolean) => {
+            console.info('Sign in form is: ', isFormOpen);
+            Animated.timing(formAnimation.positionY, {
+                toValue: state ? formHeight : 20,
+                duration: 350,
+                useNativeDriver: true,
+                easing: Easing.in(Easing.elastic(1)),
+            }).start();
+
+            console.log('Sign in form: ', state ? false : true);
+            setIsFormOpen(state ? false : true);
+            return state;
+        });
+    }
+
+
+
     // TODO: ==================================
 
 
-    // ! ========== Scroll Animation ==========
-    const [scrollY, setScrollY] = useState<Animated.Value>(new Animated.Value(0));
 
-    const headerHeight: Animated.AnimatedInterpolation = scrollY.interpolate({
-        inputRange: [0, HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT],
-        outputRange: [HEADER_EXPANDED_HEIGHT, HEADER_COLLAPSED_HEIGHT],
-        extrapolate: 'clamp',
-    });
-    const headerContentTranslate: Animated.AnimatedInterpolation = scrollY.interpolate({
-        inputRange: [0, (HEADER_EXPANDED_HEIGHT-HEADER_COLLAPSED_HEIGHT)],
-        outputRange: [0, -200],
-        extrapolate: 'clamp'
-    });
-    const headerBackgroundTranslate: Animated.AnimatedInterpolation = scrollY.interpolate({
-        inputRange: [0, (HEADER_EXPANDED_HEIGHT)],
-        outputRange: [0, -100],
-        extrapolate: 'clamp'
-    });
-    const headerContentOpacity: Animated.AnimatedInterpolation = scrollY.interpolate({
-        inputRange: [0, HEADER_EXPANDED_HEIGHT-HEADER_COLLAPSED_HEIGHT],
-        outputRange: [1, 0],
-        extrapolate: 'clamp'
-    });
-    const smallHeaderOpacity: Animated.AnimatedInterpolation = scrollY.interpolate({
-        inputRange: [HEADER_EXPANDED_HEIGHT / 1.5, HEADER_EXPANDED_HEIGHT],
-        outputRange: [0, 1],
-        extrapolate: 'clamp'
-    }); 
-    // ! ======================================
 
     return (
         <SafeAreaView  style={{backgroundColor: theme[100]}}>
@@ -365,8 +430,17 @@ const Profile = ({ navigation } : any) => {
                         </TouchableOpacity>
                     </View>
                     <View style={[profile.name]}>
-                        <Text style={[profile.nameText]}>{profileData ? `${profileData.first_name}` : 'Anonymous'}</Text>
-                        <Text style={[profile.nameText]}>{profileData ? `${profileData.last_name}` : ''}</Text>
+                        <Text style={[profile.nameText]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}</Text>
+                        {
+                            profileData ? 
+                                profileData.display_name != undefined ?
+                                <Text style={[profile.displayName]}>{profileData ? `(${profileData.display_name})` : ''}</Text>
+                                :
+                                <></>
+                            :
+                            <></>
+                        }
+
                     </View>
 
                     <View style={[profile.info]}>
@@ -406,7 +480,6 @@ const Profile = ({ navigation } : any) => {
                 style={{
                     width: width / 15,
                     aspectRatio: 1,
-                    // backgroundColor: 'red',
                     position: 'absolute',
                     top: width / 10,
                     right: (width / 10) / 2,
@@ -415,7 +488,6 @@ const Profile = ({ navigation } : any) => {
                 }}
 
                 onPress={() => {
-                    // navigation.navigate('Register')
                     toggleOptionMenuPopUp()
                 }}
             >
@@ -441,10 +513,7 @@ const Profile = ({ navigation } : any) => {
                         style={[{
                             position: 'absolute',
                             width: 200,
-                            // height: 100,
                             backgroundColor: theme[100],
-                            // left: width / 2 - 100,
-                            // top: height / 3,
                             right: (width / 10) / 2,
                             top: width / 10 + width / 15,
                             zIndex: 500,
@@ -467,15 +536,32 @@ const Profile = ({ navigation } : any) => {
                         >
                             <Text>Log out</Text>
                         </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={{
+                                width: '100%',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                paddingVertical: 16,
+                            }}
+                            onPress={() => {
+                                toggleForm();
+                                toggleOptionMenuPopUp();
+                            }}
+                        >
+                            <Text>Change display name</Text>
+                        </TouchableOpacity>
                     </Animated.View>
-
                 :
-
                 <></>
             }    
 
             <FlatList
-                contentContainerStyle={{ paddingBottom: 0, minHeight: height - HEADER_COLLAPSED_HEIGHT, paddingTop: HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT - 16}}
+                contentContainerStyle={{ 
+                    paddingBottom: HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT, 
+                    minHeight: height - HEADER_COLLAPSED_HEIGHT, 
+                    paddingTop: HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT - 16
+                }}
                 data={data} 
                 renderItem={renderPost}
                 keyExtractor={(post): any => post.id.toString()}
@@ -508,7 +594,6 @@ const Profile = ({ navigation } : any) => {
             />
             
             {/* ---------- ImagePicker Popup ---------- */}
-
             {
                 isImagePickerPopUpOpen ? 
                     <Animated.View
@@ -553,14 +638,12 @@ const Profile = ({ navigation } : any) => {
                             <Text>Use camera</Text>
                         </TouchableOpacity>
                     </Animated.View>
-
                 :
-
                 <></>
             }    
             
             {
-                isImagePickerPopUpOpen ? 
+                isImagePickerPopUpOpen || isOptionMenuPopUpOpen ? 
                     <Animated.View
                         style={[{
                             width: '100%',
@@ -573,7 +656,12 @@ const Profile = ({ navigation } : any) => {
                         }, imagePickerBackgroundAnimatedValue]}
                         // accessible={false}
                         onTouchEnd={() => {
-                            toggleImagePickerPopUp();
+                            if (isImagePickerPopUpOpen) {
+                                toggleImagePickerPopUp();
+                            }
+                            if (isOptionMenuPopUpOpen) {
+                                toggleOptionMenuPopUp();
+                            }
                         }}
                     >
 
@@ -584,6 +672,71 @@ const Profile = ({ navigation } : any) => {
                 <></>
             }    
 
+
+             {/* ---------- Save Recording Popup ---------- */}
+             <Animated.View
+                style={[profile.changeNameForm, animatedTransform]}
+            >
+                <TouchableOpacity
+                    onPress={() => {
+                        Keyboard.dismiss();
+                        toggleForm();
+                    }}
+                    style={[profile.changeNameCloseButton]}
+                >
+                    <Svg
+                        viewBox="0 0 21.213 21.213"
+                        style={{
+                            width: '30%',
+                            height: '30%',
+                        }}
+                    >
+                        <G
+                            data-name="Menu Icon Close"
+                            fill="none"
+                            stroke="#000"
+                            strokeLinecap="round"
+                            strokeWidth={3}
+                        >
+                            <Path data-name="Line 3" d="M19.092 2.122l-16.97 16.97" />
+                            <Path data-name="Line 5" d="M2.122 2.122l16.97 16.97" />
+                        </G>
+                    </Svg>
+                </TouchableOpacity>
+                
+                <View style={[profile.changeNameContainer]}>
+                    <View style={[profile.changeNameFormFieldContainer]}>
+                        <Text style={[profile.changeNameLabel]}>Add a description</Text>
+                        <TextInput
+                            style={[profile.changeNameTextInput]}
+                            placeholder='Description'
+                            multiline={true}
+                            onChangeText={(value) => {
+                                console.log(value);
+                                setChangeNameInputValue(value);
+                            }}
+                            value={changeNameInputValue}
+                            maxLength={100}
+                        >
+                        </TextInput>
+                    </View>
+
+                    <TouchableOpacity
+                        onPress={() => {
+                            console.log('Saving Name...')
+                            Keyboard.dismiss();
+                            updateDisplayName(changeNameInputValue, currentUser?.uid);
+                            toggleForm();
+                        }}
+
+                        style={[profile.changeNameButton]}
+                    >
+                        <Text style={[profile.changeNameButtonText]}>SAVE</Text>
+                    </TouchableOpacity>
+                </View>
+
+                
+            </Animated.View>
 
 
 

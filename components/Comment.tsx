@@ -110,6 +110,7 @@ const Comment = (props: any) => {
                             navigation.navigate('Profile');
                         } else {
                             // TODO: Navigate to profile of other person with ID: props.postId
+                            navigation.navigate('OtherProfile', {userId: props.comment.item.user_id});
                         }
                     }
                 }}
@@ -144,6 +145,7 @@ const Comment = (props: any) => {
                                     navigation.navigate('Profile');
                                 } else {
                                     // TODO: Navigate to profile of other person with ID: props.postId
+                                    navigation.navigate('OtherProfile', {userId: props.comment.item.user_id});
                                 }
                             }
                         }}

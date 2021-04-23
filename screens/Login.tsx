@@ -596,6 +596,7 @@ const Login = ({ navigation } : any) => {
                     onChangeText={(value) => {
                         setSignInFormEmail(value);
                     }}
+                    value={signInFormEmail}
                 />
 
                 <TextInput
@@ -605,6 +606,7 @@ const Login = ({ navigation } : any) => {
                     onChangeText={(value) => {
                         setSignInFormPassword(value);
                     }}
+                    value={signInFormPassword}
                 />
 
                 <LinearGradient
