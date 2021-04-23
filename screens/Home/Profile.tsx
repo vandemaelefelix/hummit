@@ -33,6 +33,7 @@ import { openPicker } from 'react-native-image-crop-picker';
 import { tabNavBar } from '../../styles/components/tabNavBar';
 
 const Profile = ({ navigation } : any) => {
+    const isMountedRef = useRef<boolean | null>(null);
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
     const [profileData, setProfileData] = useState<firebase.firestore.DocumentData | undefined>();
     const [score, setScore] = useState<number>(0);
@@ -89,27 +90,26 @@ const Profile = ({ navigation } : any) => {
         outputRange: [0, 1],
         extrapolate: 'clamp'
     });
-
-    const test = () => {
-        firebase.firestore().collection('users').doc('39jQYg2F1rO9RKIGlltdTiZyDHz2')
-        .onSnapshot((doc) => {
-            if (doc.exists) {
-                console.log(doc.data());
-            }
-        })
-    }
     
     useEffect(() => {
-        checkIfLoggedIn();
-        test();
-        (async () => {
-            if (Platform.OS !== 'web') {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== 'granted') {
-                alert('Sorry, we need camera roll permissions to make this work!');
-            }
-            }
-        })();
+        isMountedRef.current = true;
+
+        if (isMountedRef) {
+            checkIfLoggedIn();
+            (async () => {
+                if (Platform.OS !== 'web') {
+                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (status !== 'granted') {
+                    alert('Sorry, we need camera roll permissions to make this work!');
+                }
+                }
+            })();
+        }
+
+        return () => {
+            isMountedRef.current = false;
+        }
+
     }, []);
 
     const checkIfLoggedIn = () => {
@@ -149,55 +149,46 @@ const Profile = ({ navigation } : any) => {
     }
     
     const getProfileData = async (user_id: string) => {
-        await firebase.firestore()
-            .collection('users')
-            .doc(user_id)
-            .get()
-            .then((doc: firebase.firestore.DocumentSnapshot<firebase.firestore.DocumentData>) => {
-                if (doc && doc != undefined) {
-                    setProfileData(doc.data());
-                    if (doc.data()?.display_name) {
-                        setChangeNameInputValue(doc.data()?.display_name);
-                    } else {
-                        setChangeNameInputValue(`${doc.data()?.first_name} ${doc.data()?.last_name}`);
-                    }
+        firebase.firestore()
+        .collection('users')
+        .doc(user_id)
+        .onSnapshot((doc) =>{
+            if (doc && doc != undefined) {
+                setProfileData(doc.data());
+                if (doc.data()?.display_name) {
+                    setChangeNameInputValue(doc.data()?.display_name);
+                } else {
+                    setChangeNameInputValue(`${doc.data()?.first_name} ${doc.data()?.last_name}`);
                 }
+            }
+        });
 
-            }).catch((error) => {
-                console.error("Error getting profile data:", error);
-            });
-
-        await firebase.firestore()
-            .collection('comments')
-            .where('user_id', '==', user_id).get()
-            .then((snapshot) => {
-                let scoreCount = 0;
-                snapshot.forEach((doc) => {
-                    if (doc.data().isCorrect) {
-                        scoreCount += 5;
-                    }
-                })
-                setScore(scoreCount);
-            });
+        firebase.firestore()
+        .collection('comments')
+        .where('user_id', '==', user_id)
+        .onSnapshot((snapshot) => {
+            let scoreCount = 0;
+            snapshot.forEach((doc) => {
+                if (doc.data().isCorrect) {
+                    scoreCount += 5;
+                }
+            })
+            setScore(scoreCount);
+        });
     }
 
     const getPosts = async (userId: string) => {
         if (!isFetching) setIsFetching(true);
-        await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('userId', '==', userId)
-            .get()
-            .then((querySnapshot) => {
-                let newData: firebase.firestore.DocumentData[] = [];
-                querySnapshot.forEach((doc: firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>) => {
-                    let data = doc.data();
-                    data['id'] = doc.id;
-                    newData.push(data);
-                });
-                setData(newData);
-            })
-            .catch((error) => {
-                console.log("Error getting documents: ", error);
+        firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('userId', '==', userId)
+        .onSnapshot((querySnapshot) => {
+            let newData: firebase.firestore.DocumentData[] = [];
+            querySnapshot.forEach((doc: firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>) => {
+                let data = doc.data();
+                data['id'] = doc.id;
+                newData.push(data);
             });
-        console.log('Done fetching comments');
+            setData(newData);
+        });
         setIsFetching(false);
     }
 
@@ -222,7 +213,6 @@ const Profile = ({ navigation } : any) => {
         console.log(result);
 
         if (!result.cancelled) {
-            // setImage(result.uri);
             saveImage(result.uri);
             getProfileData(currentUser?.uid ? currentUser?.uid : '');
         }
@@ -240,11 +230,11 @@ const Profile = ({ navigation } : any) => {
 
         if (!result.cancelled) {
             saveImage(result.uri);
-            setIsRefresh(true);
-            await getProfileData(currentUser?.uid ? currentUser?.uid : '');
-            await setTimeout(() => {
-                setIsRefresh(false);
-            }, 1000)
+            // setIsRefresh(true);
+            getProfileData(currentUser?.uid ? currentUser?.uid : '');
+            // await setTimeout(() => {
+            //     setIsRefresh(false);
+            // }, 1000)
         }
     }
 
@@ -276,7 +266,7 @@ const Profile = ({ navigation } : any) => {
         firebase.firestore().collection('users')
         .doc(user_id)
         .update({
-            diplay_name: name
+            display_name: name
         });
 
     }
@@ -350,7 +340,6 @@ const Profile = ({ navigation } : any) => {
 
     const toggleForm = () => {
         setIsFormOpen((state: boolean) => {
-            console.info('Sign in form is: ', isFormOpen);
             Animated.timing(formAnimation.positionY, {
                 toValue: state ? formHeight : 20,
                 duration: 350,
@@ -358,7 +347,6 @@ const Profile = ({ navigation } : any) => {
                 easing: Easing.in(Easing.elastic(1)),
             }).start();
 
-            console.log('Sign in form: ', state ? false : true);
             setIsFormOpen(state ? false : true);
             return state;
         });
@@ -401,8 +389,7 @@ const Profile = ({ navigation } : any) => {
                     <View style={[profile.profilePictureContainer]}>
                         <Image
                             key={profileData ? profileData.profile_picture : 1}
-                            // source={profileData ? (profileData.profile_picture ? {uri: profileData.profile_picture} : require('../../assets/profile_empty.png')) : require('../../assets/profile_empty.png')}
-                            // source={!isRefresh ? (profileData ? (profileData.profile_picture ? {uri: profileData.profile_picture} : require('../../assets/profile_empty.png')) : require('../../assets/profile_empty.png')) : require('../../assets/profile_empty.png')}
+                            // TODO: Some more testing
                             source={!isRefresh ? (profileData ? (profileData.profile_picture ? {uri: profileData.profile_picture} : require('../../assets/profile_empty.png')) : require('../../assets/profile_empty.png')) : require('../../assets/profile_empty.png')}
                             style={[profile.profilePicture]}
                         >
@@ -549,7 +536,7 @@ const Profile = ({ navigation } : any) => {
                                 toggleOptionMenuPopUp();
                             }}
                         >
-                            <Text>Change display name</Text>
+                            <Text>Change nickname</Text>
                         </TouchableOpacity>
                     </Animated.View>
                 :
@@ -706,13 +693,12 @@ const Profile = ({ navigation } : any) => {
                 
                 <View style={[profile.changeNameContainer]}>
                     <View style={[profile.changeNameFormFieldContainer]}>
-                        <Text style={[profile.changeNameLabel]}>Add a description</Text>
+                        <Text style={[profile.changeNameLabel]}>Choose a nickname</Text>
                         <TextInput
                             style={[profile.changeNameTextInput]}
                             placeholder='Description'
                             multiline={true}
                             onChangeText={(value) => {
-                                console.log(value);
                                 setChangeNameInputValue(value);
                             }}
                             value={changeNameInputValue}

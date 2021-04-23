@@ -16,11 +16,20 @@ const { height, width } = Dimensions.get("window");
 
 
 const Home = ({ navigation } : any) => {
+    const isMountedRef = useRef<boolean | null>(null);
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
     
     useEffect(() => {
-        checkIfLoggedIn();
-        getPosts();
+        isMountedRef.current = true;
+
+        if (isMountedRef) {
+            checkIfLoggedIn();
+            getPosts();
+        }
+
+        return () => {
+            isMountedRef.current = false;
+        }
     }, []);
 
     const checkIfLoggedIn = () => {
@@ -102,29 +111,22 @@ const Home = ({ navigation } : any) => {
 
     const getPosts = async () => {
         if (!isFetching) setIsFetching(true);
-        await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('finished', '==', false)
-            .get()
-            .then((querySnapshot) => {
-                let newData: firebase.firestore.DocumentData[] = [];
-                querySnapshot.forEach((doc: firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>) => {
-                    let data = doc.data();
-                    data['id'] = doc.id;
-                    newData.push(data);
-                });
-                setData(newData);
-            })
-            .catch((error) => {
-                console.log("Error getting documents: ", error);
+        firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('finished', '==', false)
+        .onSnapshot((querySnapshot) => {
+            let newData: firebase.firestore.DocumentData[] = [];
+            querySnapshot.forEach((doc: firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>) => {
+                let data = doc.data();
+                data['id'] = doc.id;
+                newData.push(data);
             });
-        console.log('Done fetching comments');
+            setData(newData);
+        });
         setIsFetching(false);
     }
 
     return (
 
         <SafeAreaView style={{backgroundColor: theme[100], overflow: 'hidden'}}>
-            
-
             <Header showProfilePicture={true} userId={currentUser?.uid}/>
             <FlatList
                 contentContainerStyle={{ paddingBottom: 100, minHeight: height / 10 * 9 , paddingTop: 8}}

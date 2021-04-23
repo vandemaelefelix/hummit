@@ -26,6 +26,7 @@ const HEADER_COLLAPSED_HEIGHT = 60;
 import * as ImagePicker from 'expo-image-picker';
 
 const Profile = ({ route, navigation } : any) => {
+    const isMountedRef = useRef<boolean | null>(null);
     const { userId } = route.params;
 
     // Currently logged in useer
@@ -77,16 +78,25 @@ const Profile = ({ route, navigation } : any) => {
 
     
     useEffect(() => {
-        checkIfLoggedIn();
+        isMountedRef.current = true;
 
-        (async () => {
-            if (Platform.OS !== 'web') {
-                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-                if (status !== 'granted') {
-                    alert('Sorry, we need camera roll permissions to make this work!');
+        if (isMountedRef) {
+            checkIfLoggedIn();
+    
+            (async () => {
+                if (Platform.OS !== 'web') {
+                    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                    if (status !== 'granted') {
+                        alert('Sorry, we need camera roll permissions to make this work!');
+                    }
                 }
-            }
-        })();
+            })();
+        }
+
+        return () => {
+            isMountedRef.current = false;
+        }
+
     }, []);
 
     const checkIfLoggedIn = () => {
@@ -126,37 +136,33 @@ const Profile = ({ route, navigation } : any) => {
         )
     }
     const getProfileData = async (user_id: string) => {
-        await firebase.firestore()
-            .collection('users')
-            .doc(user_id).get()
-            .then((doc: firebase.firestore.DocumentSnapshot<firebase.firestore.DocumentData>) => {
-                if (doc && doc != undefined) {
-                    setProfileData(doc.data());
-                }
-
-            }).catch((error) => {
-                console.error("Error getting profile data:", error);
-            });
-
-        await firebase.firestore()
-            .collection('comments')
-            .where('user_id', '==', user_id).get()
-            .then((snapshot) => {
-                let scoreCount = 0;
-                snapshot.forEach((doc) => {
-                    if (doc.data().isCorrect) {
-                        scoreCount += 5;
-                    }
-                })
-                setScore(scoreCount);
-            });
-    }
-
-    const getCurrentUserData = async (user_id: string) => {
-        await firebase.firestore()
+        firebase.firestore()
         .collection('users')
-        .doc(user_id).get()
-        .then((doc) => {
+        .doc(user_id)
+        .onSnapshot((doc: firebase.firestore.DocumentSnapshot<firebase.firestore.DocumentData>) => {
+            if (doc && doc != undefined) {
+                setProfileData(doc.data());
+            }
+        });
+
+        firebase.firestore()
+        .collection('comments')
+        .where('user_id', '==', user_id)
+        .onSnapshot((snapshot) => {
+            let scoreCount = 0;
+            snapshot.forEach((doc) => {
+                if (doc.data().isCorrect) {
+                    scoreCount += 5;
+                }
+            })
+            setScore(scoreCount);
+        });
+    }
+    const getCurrentUserData = async (user_id: string) => {
+        firebase.firestore()
+        .collection('users')
+        .doc(user_id)
+        .onSnapshot((doc) => {
             if (doc.exists) {
                 const data = doc.data();
                 if (data && data.friends.includes(userId)) {
@@ -165,9 +171,6 @@ const Profile = ({ route, navigation } : any) => {
                     setIsFriend(false);
                 }
             }
-        })
-        .catch((error) => {
-            console.error("Error getting profile data:", error);
         });
     }
 
@@ -199,21 +202,19 @@ const Profile = ({ route, navigation } : any) => {
 
     const getPosts = async (userId: string) => {
         if (!isFetching) setIsFetching(true);
-        await firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('userId', '==', userId)
-            .get()
-            .then((querySnapshot) => {
-                let newData: firebase.firestore.DocumentData[] = [];
-                querySnapshot.forEach((doc: firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>) => {
-                    let data = doc.data();
-                    data['id'] = doc.id;
-                    newData.push(data);
-                });
-                setData(newData);
-            })
-            .catch((error) => {
-                console.log("Error getting documents: ", error);
+
+        firebase.firestore().collection("posts").orderBy('created_at', 'desc').where('userId', '==', userId)
+        .onSnapshot((querySnapshot) => {
+            let newData: firebase.firestore.DocumentData[] = [];
+            querySnapshot.forEach((doc: firebase.firestore.QueryDocumentSnapshot<firebase.firestore.DocumentData>) => {
+                let data = doc.data();
+                data['id'] = doc.id;
+                newData.push(data);
             });
+            setData(newData);
+        });
         console.log('Done fetching comments');
+
         setIsFetching(false);
     }
 

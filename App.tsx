@@ -1,12 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect, useRef, useState, createContext } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createStackNavigator } from '@react-navigation/stack';
 
-import * as firebase from 'firebase';
+// import * as firebase from 'firebase';
+import firebase from 'firebase';
 import { firebaseConfig } from './config';
 
 //@ts-ignore
@@ -26,18 +27,42 @@ import index from './screens/Home/index';
 const Stack = createStackNavigator();
 
 export default function App( {navigation}: any ) {
+
+	const isMountedRef = useRef<boolean | null>(null);
+	const [initialRouteName, setInitialRouteName] = useState('Home')
+    
+    useEffect(() => {
+        isMountedRef.current = true;
+
+        if (isMountedRef) {
+            checkIfLoggedIn();
+        }
+
+        return () => {
+            isMountedRef.current = false;
+        }
+    }, []);
+
+    const checkIfLoggedIn = () => {
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+				setInitialRouteName('Home')
+            } else {
+                firebase.auth().signOut();
+            }
+        })
+    }
+
 	return (
 		<SafeAreaProvider>
 			<NavigationContainer>
 				<Stack.Navigator 
 					headerMode='none'
-					initialRouteName='Login'
+					initialRouteName={initialRouteName}
 				>
 					<Stack.Screen component={index} name='Home'></Stack.Screen>
 					<Stack.Screen component={Login} name='Login'></Stack.Screen>
 					<Stack.Screen component={OtherProfile} name='OtherProfile'></Stack.Screen>
-					{/* <Stack.Screen component={Register} name='Register'></Stack.Screen>
-					<Stack.Screen component={Loading} name='Loading'></Stack.Screen> */}
 				</Stack.Navigator>
 			</NavigationContainer>
 		</SafeAreaProvider>

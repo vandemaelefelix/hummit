@@ -26,7 +26,6 @@ type Profile = {
 const Post = (props: any) => {
     const navigation = useNavigation();
     const route = useRoute().name;
-    // console.log(route)
     const {postData, showComments} = props;
     const [profileData, setProfileData] = useState<firebase.firestore.DocumentData | Profile | null>();
     const [currentUser, setCurrentUser] = useState<firebase.User | null>();
@@ -96,6 +95,30 @@ const Post = (props: any) => {
         }
     }
 
+    const deletePost = (post_id: string) => {
+        firebase.firestore().collection('posts')
+        .doc(post_id)
+        .delete()
+
+        firebase.firestore().collection('comments')
+        .where('post_id', '==', post_id).get()
+        .then((querySnapshot) => {
+            var batch = firebase.firestore().batch();
+
+            querySnapshot.forEach((doc) => {
+                batch.delete(doc.ref);
+            });
+
+            return batch.commit();
+        })
+        .then((result) => {
+            console.log(result);
+        })
+        .catch((error) => {
+            console.error(error);
+        });
+    }
+
     return (
         <View style={[post.container ]} key={postData.id.toString()}>
             <TouchableOpacity 
@@ -117,7 +140,6 @@ const Post = (props: any) => {
                 <View style={{ marginLeft: 16,}}>
 
                     {
-                        // route != 'Profile' ?
                         postData.userId != currentUser?.uid ?
                             profileData ? 
                                 profileData.display_name != undefined ?
@@ -132,6 +154,46 @@ const Post = (props: any) => {
 
                     <Text>{calcTime(new Date(Date.now()), postData.created_at)}</Text>
                 </View>
+                {
+                    postData.userId == currentUser?.uid ?
+                    <TouchableOpacity
+                        style={{
+                            width: '7%',
+                            aspectRatio: 1,
+                            position: 'absolute',
+                            right: 0,
+                        }}
+
+                        onPress={() => {
+                            deletePost(postData.id);
+                        }}
+                    >
+                        <Svg viewBox="0 0 416 512">
+                            <Path
+                                data-name="Path 25"
+                                fill="#000"
+                                d="M376 64h-88V48a48.055 48.055 0 00-48-48h-64a48.055 48.055 0 00-48 48v16H40a40.045 40.045 0 00-40 40v56a16 16 0 0016 16h8.744l13.823 290.283A47.942 47.942 0 0086.512 512h242.976a47.941 47.941 0 0047.945-45.717L391.256 176H400a16 16 0 0016-16v-56a40.045 40.045 0 00-40-40zM160 48a16.019 16.019 0 0116-16h64a16.019 16.019 0 0116 16v16h-96zM32 104a8.009 8.009 0 018-8h336a8.009 8.009 0 018 8v40H32zm313.469 360.761A15.981 15.981 0 01329.488 480H86.512a15.979 15.979 0 01-15.981-15.239L56.78 176h302.44z"
+                            />
+                            <Path
+                                data-name="Path 26"
+                                fill="#000"
+                                d="M208 448a16 16 0 0016-16V224a16 16 0 00-32 0v208a16 16 0 0016 16z"
+                            />
+                            <Path
+                                data-name="Path 27"
+                                fill="#000"
+                                d="M288 448a16 16 0 0016-16V224a16 16 0 00-32 0v208a16 16 0 0016 16z"
+                            />
+                            <Path
+                                data-name="Path 28"
+                                fill="#000"
+                                d="M128 448a16 16 0 0016-16V224a16 16 0 00-32 0v208a16 16 0 0016 16z"
+                            />
+                        </Svg>
+                    </TouchableOpacity>
+                    :
+                    <></>
+                }
             </TouchableOpacity>
             {
                 postData.description != '' ?
