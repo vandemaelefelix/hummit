@@ -90,8 +90,8 @@ const SoundWave = (props: any) => {
                     // reducedArray.push(Math.floor(average(array.slice(i, outputSize))))
                     reducedArray.push(Math.floor(Math.max(...array.slice(i, outputSize))))
                 } else {
-                    // reducedArray.push(Math.floor(average(array.slice(i, i+averageNumber))))
-                    reducedArray.push(Math.floor(Math.max(...array.slice(i, i+averageNumber))))
+                    reducedArray.push(Math.floor(average(array.slice(i, i+averageNumber))))
+                    // reducedArray.push(Math.floor(Math.max(...array.slice(i, i+averageNumber))))
                 }
             }
         } else {
@@ -119,7 +119,8 @@ const SoundWave = (props: any) => {
         let jsxObject = [];
         let seed = postId+15;
         for (let i = 0; i < 30 ; i++) {
-            jsxObject.push(<View key={id + i.toString()} style={{...soundWave.waveLine, height: randRangeSeed(5, 25, seed++)}}></View>);
+            jsxObject.push(<View key={id + i.toString()} style={{...soundWave.waveLine, height: randRangeSeed(2, 50, seed++)}}></View>);
+            // jsxObject.push(<View key={id + i.toString()} style={{...soundWave.waveLine, height: randRangeSeed(5, 25, seed++)}}></View>);
         }
 
         return jsxObject;
@@ -158,7 +159,7 @@ const SoundWave = (props: any) => {
                         }
                     }}
                 >
-                    <Svg width={24} height={24} viewBox="0 0 24 24">
+                    <Svg width={'100%'} height={'100%'} viewBox="0 0 24 24">
                         <G data-name="Group 14" transform="translate(-8 -8)">
                             <Circle
                                 data-name="Ellipse 6"
@@ -187,7 +188,7 @@ const SoundWave = (props: any) => {
                         }
                     }}
                 >
-                    <Svg width={24} height={24} viewBox="0 0 24 24" {...props}>
+                    <Svg width={'100%'} height={'100%'} viewBox="0 0 24 24" {...props}>
                         <G transform="translate(-8 -8)">
                             <Circle
                                 data-name="Ellipse 6"

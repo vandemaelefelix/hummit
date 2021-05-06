@@ -4,8 +4,6 @@ import { theme } from '../colors/theme';
 export const header = StyleSheet.create({
     container: {
         backgroundColor: theme[100],
-        // borderBottomColor: 'black',
-        // borderBottomWidth: 1,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',

@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const Header = (props: any) => {
     const navigation = useNavigation();
-    const { showProfilePicture, userId, isProfilePage } = props;
+    const { showProfilePicture, userId, isProfilePage, showSearchSection } = props;
     const [currentUser, setCurrentUser] = useState<firebase.firestore.DocumentData | undefined>();
     const [profilePicture, setProfilePicture] = useState();
 
@@ -83,9 +83,7 @@ const Header = (props: any) => {
 
             <TouchableOpacity 
                 style={[header.search]}
-                onPress={() => {
-
-                }}
+                onPress={showSearchSection}
             >
                 <Svg style={{width: '90%', height: '90%'}} viewBox="0 0 25.067 25.054">
                     <G data-name="Search Icon" fill="none" stroke="#000" strokeWidth={3}>

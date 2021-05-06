@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Children, useEffect, useRef, useState } from 'react';
 
 import { Dimensions, Text, TouchableOpacity, View, Image, FlatList, RefreshControl, Animated, ScrollResponderEvent, NativeSyntheticEvent, NativeScrollEvent, Easing, Keyboard, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -222,11 +222,19 @@ const Profile = ({ route, navigation } : any) => {
     const childRef = useRef();
 
     const showCommentSection = (postId: string) => {
-        childRef.current.openCommentSection(postId);
+        if (childRef != undefined && childRef != null) {
+            childRef.current.openCommentSection(postId);
+        }
     }
 
     return (
-        <SafeAreaView  style={{backgroundColor: theme[100]}}>
+        <SafeAreaView  
+            style={{
+                backgroundColor: theme[100],
+                minHeight: height, 
+                overflow: 'hidden',
+            }}
+        >
 
             <CommentSection isProfilePage={true} ref={childRef}></CommentSection>
 
@@ -261,7 +269,15 @@ const Profile = ({ route, navigation } : any) => {
                         </Image>
                     </View>
                     <View style={[profile.name]}>
-                        <Text style={[profile.nameText]}>{profileData ? `${profileData.display_name}` : 'Anonymous'}</Text>
+                        {
+                            profileData?.display_name && profileData.display_name != '' ?
+                            <Text style={[profile.nameText]}>{profileData.display_name}</Text>
+                            :
+                                profileData && profileData.first_name && profileData.last_name ?
+                                <Text style={[profile.nameText]}>{`${profileData.first_name} ${profileData.last_name}`}</Text>
+                                :  
+                                <Text style={[profile.nameText]}>Anonymous</Text>
+                        }
                     </View>
 
                     <View style={[profile.info]}>

@@ -141,6 +141,32 @@ export const login = StyleSheet.create({
         borderRadius: 10,
         elevation: 5,
         transform: [{translateY: -80}],
-    }
+    },
 
+
+
+    container: {
+        width: '100%',
+        alignItems:  'center',
+        justifyContent: 'space-around',
+        height: '80%',
+    },
+    textInput: {
+        width: '100%',
+        minHeight: (height/3) / 7,
+        borderColor: theme[800],
+        borderBottomWidth: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    formFieldContainer: {
+        width: '70%',
+        height: (height/3) / 4,
+        justifyContent: 'center',
+    },
+
+    label: {
+        fontWeight: '700',
+    },
 })

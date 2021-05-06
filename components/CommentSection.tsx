@@ -13,7 +13,6 @@ import Svg, { G, Path } from 'react-native-svg';
 import Comment from '../components/Comment';
 import { comments as commentsStyle} from '../styles/components/comments';
 import { theme } from '../styles/colors/theme';
-
 const { height, width } = Dimensions.get("window");
 
 const CommentSection = forwardRef((props: any, ref: any) => {
@@ -48,7 +47,7 @@ const CommentSection = forwardRef((props: any, ref: any) => {
     const commentSectionHeight = height / 10 * 9;
     const [isCommentSectionOpen, setIsCommentSectionOpen] = useState<boolean>(false);
     const [commentSectionAnimation, setCommentSectionAnimation] = useState({
-        positionY: new Animated.Value(isCommentSectionOpen ? 0 : commentSectionHeight),
+        positionY: new Animated.Value(isCommentSectionOpen ? 0 : commentSectionHeight + 30),
     });
     const commentSectionAnimatedTransform = {
         transform: [{translateY: commentSectionAnimation.positionY}],
@@ -73,7 +72,6 @@ const CommentSection = forwardRef((props: any, ref: any) => {
 
     useImperativeHandle(ref, () => ({
         openCommentSection(post_id: string) {
-            // console.log('Het werkt');
             setCommentSectionPostId(post_id);
             toggleCommentSection('hide');
             getComments(post_id);
@@ -81,51 +79,6 @@ const CommentSection = forwardRef((props: any, ref: any) => {
         }
     }));
 
-    useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
-            (e) => {
-                console.log(e.endCoordinates)
-                setIsCommentSectionOpen(state => {
-                    if (state) {
-                        Animated.timing(commentSectionAnimation.positionY, {
-                            toValue: e.endCoordinates.height,
-                            duration: 0,
-                            useNativeDriver: true,
-                            easing: Easing.linear,
-                        }).start();
-                    }
-
-                    return state;
-                });
-            }
-        );
-        const keyboardDidHideListener = Keyboard.addListener(
-            'keyboardDidHide',
-            (e) => {
-                console.log(e.endCoordinates);
-                setIsCommentSectionOpen(state => {
-                    if (state) {
-                        Animated.timing(commentSectionAnimation.positionY, {
-                            toValue: 0,
-                            duration: 0,
-                            useNativeDriver: true,
-                            easing: Easing.linear,
-                        }).start();
-                    }
-
-                    return state;
-                });
-            }
-        );
-        
-        return () => {
-            keyboardDidHideListener.remove();
-            keyboardDidShowListener.remove();
-        };
-    }, []);
-
-    //! =================== FUNCTIONS ======================
     const toggleCommentSection = (hideShow: string | null = null) => {
         if (hideShow != null) {
             if (hideShow == 'hide') {
@@ -137,7 +90,7 @@ const CommentSection = forwardRef((props: any, ref: any) => {
 
         setIsCommentSectionOpen((state: boolean) => {
             Animated.timing(commentSectionAnimation.positionY, {
-                toValue: state ? commentSectionHeight : 0,
+                toValue: state ? commentSectionHeight + 30 : 0,
                 duration: 350,
                 useNativeDriver: true,
                 easing: Easing.in(Easing.elastic(1)),
@@ -275,19 +228,19 @@ const CommentSection = forwardRef((props: any, ref: any) => {
 
         <Animated.View
                 style={[commentsStyle.commentSection, commentSectionAnimatedTransform]}
-                onTouchStart={(e) => {
-                    setOnTouchStartComments(e.nativeEvent.locationY);
-                }}
-                onTouchEnd={(e) => {
-                    console.log('OnTouchEnd: ', e.nativeEvent.locationY);
-                    if (commentsScrollLocation < 20) {
-                        if (onTouchStartComments) {
-                            if ((e.nativeEvent.locationY - onTouchStartComments) >= 30) {
-                                toggleCommentSection()
-                            }
-                        }
-                    }
-                }}
+                // onTouchStart={(e) => {
+                //     setOnTouchStartComments(e.nativeEvent.locationY);
+                // }}
+                // onTouchEnd={(e) => {
+                //     console.log('OnTouchEnd: ', e.nativeEvent.locationY);
+                //     if (commentsScrollLocation < 20) {
+                //         if (onTouchStartComments) {
+                //             if ((e.nativeEvent.locationY - onTouchStartComments) >= 30) {
+                //                 toggleCommentSection()
+                //             }
+                //         }
+                //     }
+                // }}
                 accessible={true}
             >
                 <TouchableOpacity

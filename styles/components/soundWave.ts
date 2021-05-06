@@ -13,6 +13,8 @@ export const soundWave = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
+        paddingRight: 16,
+        paddingLeft: 12,
         paddingVertical: 8,
     },
     wave: {
@@ -33,7 +35,8 @@ export const soundWave = StyleSheet.create({
         alignItems: 'center',
     },
     button: {
-
+        width: 30,
+        height: 30,
     },
     time: {
         color: theme[100],

@@ -150,9 +150,16 @@ const Comment = (props: any) => {
                             }
                         }}
                     >
-                        <Text style={[comments.commentName]}>
-                            {profileData ? `${profileData.first_name} ${profileData.last_name}` : ''}
-                        </Text>
+                        {
+                            profileData && profileData.display_name && profileData.display_name != '' ?
+                            <Text style={[comments.commentName]}>
+                                {profileData ? profileData.display_name : 'Anonymous'}
+                            </Text>
+                            :
+                            <Text style={[comments.commentName]}>
+                                {profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}
+                            </Text>
+                        }
                     </TouchableOpacity>
                     <View style={{
                         width: 5,

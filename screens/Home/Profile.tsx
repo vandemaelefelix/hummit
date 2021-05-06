@@ -19,12 +19,10 @@ import Comment from '../../components/Comment';
 import CommentSection from '../../components/CommentSection';
 
 // !-----------------------
-import { BlurView } from 'expo-blur';
 
 
 const { height, width } = Dimensions.get("window");
 
-// const HEADER_EXPANDED_HEIGHT = 400;
 const HEADER_EXPANDED_HEIGHT = height / 10 * 4;
 const HEADER_COLLAPSED_HEIGHT = 60;
 
@@ -133,17 +131,28 @@ const Profile = ({ navigation } : any) => {
             <Post postData={item} showComments={showCommentSection} ></Post>
         )
     }
+
     const renderEmptyPost = () => {
         return (
             <View
                 style={{
-                    width: '100%',
-                    paddingVertical: 16,
+                    width: '90%',
+                    height: height / 6,
+                    paddingVertical: 32,
                     justifyContent: 'center',
                     alignItems: 'center',
+                    alignSelf: 'center',
                 }}
             >
-                <Text>Please post something 🙁</Text>
+                <Text
+                    style={{
+                        fontWeight: '700',
+                        fontSize: 18,
+                        textAlign: 'center',
+                    }}
+                >
+                    Hold the purple button to start recording 🙂
+                </Text>
             </View>
         )
     }
@@ -196,7 +205,9 @@ const Profile = ({ navigation } : any) => {
     const childRef = useRef();
 
     const showCommentSection = (postId: string) => {
-        childRef.current?.openCommentSection(postId);
+        if(childRef) {
+            childRef.current.openCommentSection(postId);
+        }
     }
 
 
@@ -230,11 +241,7 @@ const Profile = ({ navigation } : any) => {
 
         if (!result.cancelled) {
             saveImage(result.uri);
-            // setIsRefresh(true);
             getProfileData(currentUser?.uid ? currentUser?.uid : '');
-            // await setTimeout(() => {
-            //     setIsRefresh(false);
-            // }, 1000)
         }
     }
 
@@ -352,15 +359,60 @@ const Profile = ({ navigation } : any) => {
         });
     }
 
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener(
+            'keyboardDidShow',
+            (e) => {
+                console.log(e.endCoordinates)
+                setIsFormOpen(state => {
+                    if (state) {
+                        Animated.timing(formAnimation.positionY, {
+                            toValue: -e.endCoordinates.height,
+                            duration: 0,
+                            useNativeDriver: true,
+                            easing: Easing.linear,
+                        }).start();
+                    }
 
+                    return state;
+                });
+            }
+        );
+        const keyboardDidHideListener = Keyboard.addListener(
+            'keyboardDidHide',
+            (e) => {
+                console.log(e.endCoordinates);
+                setIsFormOpen(state => {
+                    if (state) {
+                        Animated.timing(formAnimation.positionY, {
+                            toValue: 0,
+                            duration: 0,
+                            useNativeDriver: true,
+                            easing: Easing.linear,
+                        }).start();
+                    }
 
-    // TODO: ==================================
-
+                    return state;
+                });
+            }
+        );
+        
+        return () => {
+            keyboardDidHideListener.remove();
+            keyboardDidShowListener.remove();
+        };
+    }, []);
 
 
 
     return (
-        <SafeAreaView  style={{backgroundColor: theme[100]}}>
+        <SafeAreaView  
+            style={{
+                backgroundColor: theme[100],
+                minHeight: height, 
+                overflow: 'hidden'
+            }}
+        >
 
             <CommentSection isProfilePage={true} ref={childRef}></CommentSection>
 
@@ -419,11 +471,8 @@ const Profile = ({ navigation } : any) => {
                     <View style={[profile.name]}>
                         <Text style={[profile.nameText]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}</Text>
                         {
-                            profileData ? 
-                                profileData.display_name != undefined ?
+                            profileData && profileData.display_name && profileData.display_name != '' ? 
                                 <Text style={[profile.displayName]}>{profileData ? `(${profileData.display_name})` : ''}</Text>
-                                :
-                                <></>
                             :
                             <></>
                         }
@@ -554,7 +603,7 @@ const Profile = ({ navigation } : any) => {
                 keyExtractor={(post): any => post.id.toString()}
                 refreshControl={
                     <RefreshControl
-                        onRefresh={() => currentUser.uid ? getPosts(currentUser?.uid ) : console.log('No user logged in')}
+                        onRefresh={() => currentUser?.uid ? getPosts(currentUser?.uid ) : console.log('No user logged in')}
                         refreshing={isFetching}
                         title="Pull to refresh"
                         tintColor="#474574"
@@ -660,7 +709,7 @@ const Profile = ({ navigation } : any) => {
             }    
 
 
-             {/* ---------- Save Recording Popup ---------- */}
+             {/* ---------- Change Name Popup ---------- */}
              <Animated.View
                 style={[profile.changeNameForm, animatedTransform]}
             >

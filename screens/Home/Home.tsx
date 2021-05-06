@@ -12,7 +12,10 @@ import Post from '../../components/Post';
 import firebase from 'firebase';
 import 'firebase/firestore';
 import CommentSection from '../../components/CommentSection';
+import SearchSection from '../../components/SearchSection';
 const { height, width } = Dimensions.get("window");
+
+import LottieView from 'lottie-react-native';
 
 
 const Home = ({ navigation } : any) => {
@@ -25,12 +28,18 @@ const Home = ({ navigation } : any) => {
         if (isMountedRef) {
             checkIfLoggedIn();
             getPosts();
+            // setStartupLoading(false);
         }
 
         return () => {
             isMountedRef.current = false;
         }
     }, []);
+    useEffect(() => {
+        if(loadingRef?.current) {
+            loadingRef.current.play();
+        }
+    }, [])
 
     const checkIfLoggedIn = () => {
         firebase.auth().onAuthStateChanged((user) => {
@@ -44,6 +53,7 @@ const Home = ({ navigation } : any) => {
     }
     const [data, setData] = useState<firebase.firestore.DocumentData[]>([]);
     const [isFetching, setIsFetching] = useState(false);
+    const [startupLoading, setStartupLoading] = useState(true);
 
     const renderPost = ({item}: any) => {
         return (
@@ -51,17 +61,28 @@ const Home = ({ navigation } : any) => {
         )
     }
 
+    const loadingRef = useRef(null);
+
     const renderEmptyPost = () => {
         return (
             <View
                 style={{
-                    width: '100%',
-                    paddingVertical: 16,
+                    width: '90%',
+                    height: height / 6,
+                    paddingVertical: 32,
                     justifyContent: 'center',
                     alignItems: 'center',
+                    alignSelf: 'center',
                 }}
             >
-                <Text>Please post something 🙁</Text>
+                <Text
+                    style={{
+                        fontWeight: '700',
+                        fontSize: 18
+                    }}
+                >
+                    Be the first to post something 🙂
+                </Text>
             </View>
         )
     }
@@ -106,6 +127,11 @@ const Home = ({ navigation } : any) => {
         childRef.current?.openCommentSection(postId);
     }
 
+    const searchRef = useRef();
+    const showSearchSection = (postId: string) => {
+        searchRef.current?.openSearchSection(postId);
+    }
+
 
     // ! ========== Firebase Read and Write Functions ==========
 
@@ -121,32 +147,66 @@ const Home = ({ navigation } : any) => {
             });
             setData(newData);
         });
-        setIsFetching(false);
+
+        setTimeout(() => {
+            setIsFetching(false);
+            setStartupLoading(false);
+        }, 2000);
     }
 
     return (
 
-        <SafeAreaView style={{backgroundColor: theme[100], overflow: 'hidden'}}>
-            <Header showProfilePicture={true} userId={currentUser?.uid}/>
-            <FlatList
-                contentContainerStyle={{ paddingBottom: 100, minHeight: height / 10 * 9 , paddingTop: 8}}
-                data={data} 
-                renderItem={renderPost}
-                keyExtractor={(post): any => post.id.toString()}
-                refreshControl={
-                    <RefreshControl
-                        onRefresh={() => getPosts()}
-                        refreshing={isFetching}
-                        title="Pull to refresh"
-                        tintColor="#474574"
-                        titleColor="#474574"
+        <SafeAreaView 
+            style={{
+                backgroundColor: 'white', 
+                minHeight: height, 
+                overflow: 'hidden'
+            }}
+        >
+            <Header showProfilePicture={true} userId={currentUser?.uid} showSearchSection={showSearchSection}/>
+            {
+                startupLoading ?
+                <View
+                    style={{
+                        width: '100%',
+                        paddingVertical: 16,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    <LottieView
+                        ref={loadingRef.current}
+                        style={{
+                            width: width,
+                        }}
+                        source={require('../../assets/empty_comments_lottie2.json')}
+                        loop={true}
+                        autoPlay={true}
                     />
-                }
+                    
+                </View>
+                :
 
-                ListEmptyComponent={renderEmptyPost}
-            />
+                <FlatList
+                    contentContainerStyle={{ paddingBottom: 200, minHeight: height / 10 * 9 , paddingTop: 8}}
+                    data={data} 
+                    renderItem={renderPost}
+                    keyExtractor={(post): any => post.id.toString()}
+                    refreshControl={
+                        <RefreshControl
+                            onRefresh={() => getPosts()}
+                            refreshing={isFetching}
+                            title="Pull to refresh"
+                            tintColor="#474574"
+                            titleColor="#474574"
+                        />
+                    }
+                    ListEmptyComponent={renderEmptyPost}
+                />
+            }
 
             <CommentSection ref={childRef} ></CommentSection>
+            <SearchSection ref={searchRef} ></SearchSection>
         </SafeAreaView>
 
     )

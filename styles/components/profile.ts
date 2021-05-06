@@ -121,13 +121,9 @@ export const profile = StyleSheet.create({
         alignItems:  'center',
         justifyContent: 'flex-start',
         height: '80%',
-        // backgroundColor: 'green',
     },
     changeNameFormFieldContainer: {
-        // width: '70%',
         width: '50%',
-        // height: (height/3) / 4,
-        // backgroundColor: 'red',
         justifyContent: 'center',
         paddingBottom: 16,
     },

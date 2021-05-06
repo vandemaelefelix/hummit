@@ -25,11 +25,13 @@ import Loading from './screens/Loading';
 import index from './screens/Home/index';
 
 const Stack = createStackNavigator();
+import { LogBox } from 'react-native';
+LogBox.ignoreLogs(['Warning: ...']);
 
 export default function App( {navigation}: any ) {
 
 	const isMountedRef = useRef<boolean | null>(null);
-	const [initialRouteName, setInitialRouteName] = useState('Home')
+	const [initialRouteName, setInitialRouteName] = useState('Login')
     
     useEffect(() => {
         isMountedRef.current = true;

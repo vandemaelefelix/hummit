@@ -11,7 +11,7 @@ import * as FileSystem from 'expo-file-system';
 
 import Home from './Home';
 import Profile from './Profile';
-import { Animated, Dimensions, Easing, TouchableOpacity, View, Text, TextInput, Keyboard } from 'react-native';
+import { Animated, Dimensions, Easing, TouchableOpacity, View, Text, TextInput, Keyboard, StatusBar } from 'react-native';
 import {Picker} from '@react-native-picker/picker';
 
 import { theme } from '../../styles/colors/theme';
@@ -27,11 +27,15 @@ import * as Haptics from 'expo-haptics';
 
 import Constants from 'expo-constants';
 import SoundWave from '../../components/SoundWave';
+import CustomTabLabel from '../../components/CustomTabLabel';
+import * as Permissions from 'expo-permissions';
+import { usePermissions } from 'expo-permissions';
 
 const Tab = createMaterialTopTabNavigator();
 // const Tab = createMaterialBottomTabNavigator();
 
 const index = ({ navigation } : any) => {
+    const [permission, askForPermission] = usePermissions(Permissions.CAMERA, { ask: true });
     // ! Mag weg
     const { height, width } = Dimensions.get("window");
 
@@ -60,12 +64,11 @@ const index = ({ navigation } : any) => {
         transform: [{translateY: formAnimation.positionY}],
     } 
 
-    // const [pickerSelectedValue, setPickerSelectedValue] = useState<string | undefined>();
     const [descriptionValue, setDescriptionValue] = useState<string | undefined>();
     const [privacyMode, setPrivacyMode] = useState<number>(0);
     
     useEffect(() => {
-        checkIfLoggedIn()
+        checkIfLoggedIn();
     });
 
     const checkIfLoggedIn = () => {
@@ -86,7 +89,7 @@ const index = ({ navigation } : any) => {
             let averageNumber = Math.floor(array.length / outputSize);
             
             for (let i = 0; i < outputSize; i++) {
-                let average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
+                let average = (arr: any) => arr.reduce((a: any, b: any) => a + b) / arr.length;
                 if (i == outputSize - 1) {
                     reducedArray.push(Math.floor(average(array.slice(i, outputSize))))
                 } else {
@@ -217,15 +220,34 @@ const index = ({ navigation } : any) => {
     
     return (
         <SafeAreaProvider>
+            {/* <StatusBar backgroundColor="#FFF" barStyle="dark-content"/> */}
             <Tab.Navigator
                 tabBarPosition='bottom'
                 tabBarOptions={{
                     tabStyle: {backgroundColor: theme[100], height: 60},
-                    keyboardHidesTabBar: false,
+                    keyboardHidesTabBar: true,
+                    indicatorStyle: {
+                        height: '100%',
+                        backgroundColor: '#ff6900'
+                    },
                 }}
+                screenOptions={({ route }) => ({
+                    tabBarLabel: ({ focused }) => {
+                        return focused
+                            ? (<CustomTabLabel isFocused={focused} page={route.name}/>)
+                            : (<CustomTabLabel isFocused={focused} page={route.name}/>)
+                    },
+                    
+                })}
             >
-                <Tab.Screen name="Home" component={Home} />
-                <Tab.Screen name="Profile" component={Profile} />
+                <Tab.Screen 
+                    name="Home" 
+                    component={Home}
+                />
+                <Tab.Screen 
+                    name="Profile" 
+                    component={Profile}
+                />
             </Tab.Navigator>
 
             {/* --------- Record Button ---------- */}

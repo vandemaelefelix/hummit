@@ -21,7 +21,9 @@ const Login = ({ navigation } : any) => {
     const checkIfLoggedIn = () => {
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                navigation.navigate('Home');
+                // navigation.navigate('Home');
+            } else {
+                navigation.navigate('Login');
             }
         })
     }
@@ -258,18 +260,12 @@ const Login = ({ navigation } : any) => {
                                 .update({
                                     last_logged_in: Date.now(),
                                 });
-
-                            // firebase
-                            //     .database()
-                            //     .ref('/users/' + result.user?.uid)
-                            //     .update({
-                            //         last_logged_in: Date.now(),
-                            //     })
                         }
 
                         console.log('writing to database')
                         console.log('User signed in');
 
+                    }).then(() => {
                         navigation.navigate('Home');
                     })
                     .catch((error) => {
@@ -294,7 +290,7 @@ const Login = ({ navigation } : any) => {
             });
 
             if (result.type === 'success') {
-                onSignIn(result);
+                await onSignIn(result);
                 return result.accessToken;
             } else {
                 return { cancelled: true };
@@ -408,7 +404,6 @@ const Login = ({ navigation } : any) => {
                     >{errorMessage}</Text>
                 </Animated.View>
                 
-
                 {/* ---------- LOGO ---------- */}
                 <View
                     style={[login.logoContainer]}
@@ -426,7 +421,6 @@ const Login = ({ navigation } : any) => {
                     <Text style={[login.logoText]} >HUMMIT</Text>
                 </View>
 
-
                 {/* ---------- BUTTONS: SIGN IN | SIGN UP | SIGN IN WITH GOOGLE ---------- */}
                 <View 
                     style={[login.buttonsContainer]}
@@ -437,7 +431,7 @@ const Login = ({ navigation } : any) => {
                             toggleSignInForm()
                         }}
                     >
-                        <Text style={[login.buttonText]}>SIGN IN</Text>
+                        <Text style={[login.buttonText]}>LOG IN</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -454,7 +448,7 @@ const Login = ({ navigation } : any) => {
                         onPress={() => {
                             console.log('Sign In With Google');
                             signInWithGoogleAsync();
-                            navigation.navigate('Home');
+                            // navigation.navigate('Home');
                         }}
                     >
                         <Svg style={{
@@ -507,55 +501,69 @@ const Login = ({ navigation } : any) => {
                     </Svg>
                 </TouchableOpacity>
                 
-                <TextInput
-                    placeholder="FIRSTNAME"
-                    style={[login.formField]}
-                    onChangeText={(value) => {
-                        setSignUpFormFirstName(value);
-                    }}
-                />
-                <TextInput
-                    placeholder="NAME"
-                    style={[login.formField]}
-                    onChangeText={(value) => {
-                        setSignUpFormName(value);
-                    }}
-                />
-                <TextInput
-                    placeholder="EMAIL"
-                    style={[login.formField]}
-                    onChangeText={(value) => {
-                        setSignUpFormEmail(value);
-                    }}
-                />
+                <View style={[login.container]}>
+                    <View style={[login.formFieldContainer]}>
+                        <Text style={[login.label]}>First name</Text>
+                        <TextInput
+                            placeholder="First Name"
+                            style={[login.textInput]}
+                            onChangeText={(value) => {
+                                setSignUpFormFirstName(value);
+                            }}
+                        />
+                    </View>
+                    <View style={[login.formFieldContainer]}>
+                        <Text style={[login.label]}>Name</Text>
+                        <TextInput
+                            placeholder="Name"
+                            style={[login.textInput]}
+                            onChangeText={(value) => {
+                                setSignUpFormName(value);
+                            }}
+                        />
+                    </View>
+                    <View style={[login.formFieldContainer]}>
+                        <Text style={[login.label]}>Email address</Text>
+                        <TextInput
+                            placeholder="Email"
+                            style={[login.textInput]}
+                            onChangeText={(value) => {
+                                setSignUpFormEmail(value);
+                            }}
+                        />
+                    </View>
+                    <View style={[login.formFieldContainer]}>
+                        <Text style={[login.label]}>Password</Text>
+                        
+                        <TextInput
+                            secureTextEntry={true}
+                            placeholder="Password"
+                            style={[login.textInput]}
+                            onChangeText={(value) => {
+                                setSignUpFormPassword(value);
+                            }}
+                        />
+                    </View>
 
-                <TextInput
-                    secureTextEntry={true}
-                    placeholder="PASSWORD"
-                    style={[login.formField]}
-                    onChangeText={(value) => {
-                        setSignUpFormPassword(value);
-                    }}
-                />
-
-                <LinearGradient
-                    colors={[theme[700], theme[800]]}
-                    style={[login.formButton]}
-                >
-                    <TouchableOpacity
-                        style={{ 
-                            width: '100%', 
-                            height: '100%', 
-                            justifyContent: 'center', 
-                            alignItems: 'center',
-                        }}
-                        onPress={() => {
-                            signUpWithEmailAndPassword(signUpFormFirstName, signUpFormName, signUpFormEmail, signUpFormPassword);
-                        }}
+                    <LinearGradient
+                        colors={[theme[700], theme[800]]}
+                        style={[login.formButton]}
                     >
-                        <Text style={[login.formButtonText]}>SIGN UP</Text>
-                    </TouchableOpacity>
-                </LinearGradient>
+                        <TouchableOpacity
+                            style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                justifyContent: 'center', 
+                                alignItems: 'center',
+                            }}
+                            onPress={() => {
+                                signUpWithEmailAndPassword(signUpFormFirstName, signUpFormName, signUpFormEmail, signUpFormPassword);
+                            }}
+                        >
+                            <Text style={[login.formButtonText]}>SIGN UP</Text>
+                        </TouchableOpacity>
+                    </LinearGradient>
+                </View>
 
             </Animated.View>
 
@@ -590,43 +598,50 @@ const Login = ({ navigation } : any) => {
                     </Svg>
                 </TouchableOpacity>
                 
-                <TextInput
-                    placeholder="EMAIL"
-                    style={[login.formField]}
-                    onChangeText={(value) => {
-                        setSignInFormEmail(value);
-                    }}
-                    value={signInFormEmail}
-                />
+                <View style={[login.container]}>
+                    <View style={[login.formFieldContainer]}>
+                        <Text style={[login.label]}>Email address</Text>
+                        <TextInput
+                            placeholder="Email"
+                            style={[login.textInput]}
+                            onChangeText={(value) => {
+                                setSignInFormEmail(value);
+                            }}
+                            value={signInFormEmail}
+                        />
+                    </View>
+                    <View style={[login.formFieldContainer]}>
+                        <Text style={[login.label]}>Password</Text>
+                        <TextInput
+                            placeholder="Password"
+                            style={[login.textInput]}
+                            onChangeText={(value) => {
+                                setSignInFormPassword(value);
+                            }}
+                            secureTextEntry={true}
+                            value={signInFormPassword}
+                        />
+                    </View>
 
-                <TextInput
-                    secureTextEntry={true}
-                    placeholder="PASSWORD"
-                    style={[login.formField]}
-                    onChangeText={(value) => {
-                        setSignInFormPassword(value);
-                    }}
-                    value={signInFormPassword}
-                />
-
-                <LinearGradient
-                    colors={[theme[700], theme[800]]}
-                    style={[login.formButton]}
-                >
-                    <TouchableOpacity
-                        style={{ 
-                            width: '100%', 
-                            height: '100%', 
-                            justifyContent: 'center', 
-                            alignItems: 'center',
-                        }}
-                        onPress={() => {
-                            signInWithEmailAndPasswordCustom(signInFormEmail, signInFormPassword);
-                        }}
+                    <LinearGradient
+                        colors={[theme[700], theme[800]]}
+                        style={[login.formButton]}
                     >
-                        <Text style={[login.formButtonText]}>SIGN IN</Text>
-                    </TouchableOpacity>
-                </LinearGradient>
+                        <TouchableOpacity
+                            style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                justifyContent: 'center', 
+                                alignItems: 'center',
+                            }}
+                            onPress={() => {
+                                signInWithEmailAndPasswordCustom(signInFormEmail, signInFormPassword);
+                            }}
+                        >
+                            <Text style={[login.formButtonText]}>LOG IN</Text>
+                        </TouchableOpacity>
+                    </LinearGradient>
+                </View>
 
             </Animated.View>
         

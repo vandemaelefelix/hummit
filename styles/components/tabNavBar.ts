@@ -8,7 +8,6 @@ export const tabNavBar = StyleSheet.create({
     form: {
         position: 'absolute',
         width: '100%',
-        // height: height / 10 * 5,
         bottom: 0,
         backgroundColor: theme[100],
         justifyContent: 'space-around',
@@ -85,6 +84,6 @@ export const tabNavBar = StyleSheet.create({
     },
 
     label: {
-
+        fontWeight: '700',
     },
 })

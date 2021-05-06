@@ -142,7 +142,7 @@ const Post = (props: any) => {
                     {
                         postData.userId != currentUser?.uid ?
                             profileData ? 
-                                profileData.display_name != undefined ?
+                                profileData.display_name != undefined && profileData.display_name != '' ?
                                 <Text style={[post.name]}>{profileData ? profileData.display_name : 'Anonymous'}</Text>
                                 :
                                 <Text style={[post.name]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}</Text>
