@@ -221,7 +221,6 @@ const Profile = ({ navigation } : any) => {
             quality: 0.1,
         });
 
-        console.log(result);
 
         if (!result.cancelled) {
             saveImage(result.uri);

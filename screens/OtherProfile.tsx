@@ -309,7 +309,12 @@ const Profile = ({ route, navigation } : any) => {
                     },
                 ]}
             >
-                <Text style={[header.logo]}>{profileData ? `${profileData.display_name}` : 'Anonymous'}</Text>
+                {
+                    profileData && profileData.display_name ? 
+                    <Text style={[header.logo]}>{profileData ? `${profileData.display_name}` : 'Anonymous'}</Text>
+                    :
+                    <Text style={[header.logo]}>{profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Anonymous'}</Text>
+                }
             </Animated.View>
 
             {/* ---------- Back Button ---------- */}

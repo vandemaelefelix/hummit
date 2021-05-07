@@ -151,7 +151,7 @@ const Home = ({ navigation } : any) => {
         setTimeout(() => {
             setIsFetching(false);
             setStartupLoading(false);
-        }, 2000);
+        }, 500);
     }
 
     return (

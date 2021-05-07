@@ -31,7 +31,7 @@ LogBox.ignoreLogs(['Warning: ...']);
 export default function App( {navigation}: any ) {
 
 	const isMountedRef = useRef<boolean | null>(null);
-	const [initialRouteName, setInitialRouteName] = useState('Login')
+	const [initialRouteName, setInitialRouteName] = useState('Home')
     
     useEffect(() => {
         isMountedRef.current = true;
